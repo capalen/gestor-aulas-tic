@@ -148,7 +148,6 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- TEXTO MODIFICADO AQUÍ -->
                 <p class="text-xs text-gray-500 mt-4 flex items-center gap-1">
                     <i class="ph ph-info text-lg"></i> * Si necesitas anular un aula o modificar una reserva, ponte en contacto con el coordinador TIC.
                 </p>
@@ -246,6 +245,7 @@
             <p class="text-gray-600 mb-4 text-sm">Introduce la clave del coordinador:</p>
             <input type="password" id="delete-password" class="w-full p-2.5 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg tracking-widest" placeholder="******">
             <input type="hidden" id="delete-booking-id">
+            <input type="hidden" id="delete-is-firebase">
             <div class="flex gap-3">
                 <button onclick="closePasswordModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors">
                     Cancelar
@@ -257,15 +257,28 @@
         </div>
     </div>
 
-    <!-- Script principal -->
+    <!-- SCRIPT PRINCIPAL (MÓDULO FIREBASE) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Importaciones de Firebase (V10 para web directa)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        let db, auth, currentUserId;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let isFirebaseInitialized = false;
+        // Aquí van tus llaves
+        const firebaseConfig = {
+            apiKey: "AIzaSyBs69L8fBroxFwcJ3sMFGcDHwIuXmSkVMg",
+            authDomain: "gestoraulas-5192c.firebaseapp.com",
+            projectId: "gestoraulas-5192c",
+            storageBucket: "gestoraulas-5192c.firebasestorage.app",
+            messagingSenderId: "864557710919",
+            appId: "1:864557710919:web:e45f5071d6ae370d78bb62"
+        };
+
+        // Inicializamos Firebase y la Base de Datos
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Referencia a la colección 'reservas' en Firestore
+        const reservasCol = collection(db, 'reservas');
 
         const rooms = [
             { id: 'atenea', name: 'Atenea', capacity: 25, location: 'Edificio Bachillerato', mobile: false },
@@ -278,7 +291,8 @@
             { id: 'audiovisuales', name: 'Audiovisuales (Radio y Vídeo)', capacity: 1, location: 'General', mobile: false }
         ];
 
-        let bookings = [
+        // Reservas Fijas del código
+        let defaultBookings = [
             // CARLOS
             { id: 'c1', room_id: 'atenea', dayOfWeek: 1, hour: 1, teacher: 'Carlos', course: '4º ESO', subject: 'Digitalización', type: 'trimestre' },
             { id: 'c2', room_id: 'atenea', dayOfWeek: 1, hour: 2, teacher: 'Carlos', course: '3º ESO', subject: 'Control y Robótica', type: 'trimestre' },
@@ -324,6 +338,27 @@
             { id: 'g1', room_id: 'digital', dayOfWeek: 3, hour: 4, teacher: 'Giomar', course: '2º ESO B', subject: 'MAE', type: 'trimestre' },
             { id: 'g2', room_id: 'digital', dayOfWeek: 4, hour: 2, teacher: 'Giomar', course: '2º ESO B', subject: 'MAE', type: 'trimestre' }
         ];
+
+        // Esta lista contiene las fijas + las de la base de datos
+        let allBookings = [...defaultBookings];
+        let firebaseBookings = [];
+
+        // Leer datos en tiempo real de Firebase
+        onSnapshot(reservasCol, (snapshot) => {
+            firebaseBookings = [];
+            snapshot.forEach((doc) => {
+                firebaseBookings.push({ ...doc.data(), _firebaseId: doc.id });
+            });
+            allBookings = [...defaultBookings, ...firebaseBookings];
+            
+            // Actualizar vistas si están abiertas
+            if (!document.getElementById('tab-horarios').classList.contains('hidden')) {
+                renderSchedule();
+            }
+            if (!document.getElementById('results-container').classList.contains('hidden')) {
+                searchRooms(); // Vuelve a buscar por si le han quitado el aula mientras miraba
+            }
+        });
 
         const nonTeachingDays = [
             "2026-10-12", "2026-10-30", "2026-11-02", "2026-12-07", "2026-12-08",
@@ -445,7 +480,7 @@
             const dayOfWeek = targetDate.getDay();
 
             let availableRooms = rooms.filter(room => {
-                const isOccupied = bookings.some(b => {
+                const isOccupied = allBookings.some(b => {
                     if (b.room_id !== room.id || b.hour !== hour) return false;
                     if (b.type === 'trimestre' && b.dayOfWeek === dayOfWeek) return true;
                     if (b.type === 'puntual' && b.specificDate === dateStr) return true;
@@ -567,7 +602,6 @@
             const dayOfWeek = targetDate.getDay(); 
 
             const newBooking = {
-                id: 'res_' + Date.now(),
                 room_id: roomId,
                 hour: hour,
                 teacher: teacher,
@@ -575,18 +609,17 @@
                 subject: subject,
                 type: reserveType,
                 dayOfWeek: dayOfWeek,
-                specificDate: reserveType === 'puntual' ? dateStr : null
+                specificDate: reserveType === 'puntual' ? dateStr : null,
+                timestamp: Date.now()
             };
 
-            if (isFirebaseInitialized && db) {
-                try {
-                    const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
-                    await addDoc(colRef, newBooking);
-                } catch (error) {
-                    bookings.push(newBooking);
-                }
-            } else {
-                bookings.push(newBooking);
+            // Guarda en Firestore
+            try {
+                await addDoc(reservasCol, newBooking);
+            } catch (e) {
+                console.error("Error guardando reserva: ", e);
+                showCustomAlert("Error", "No se pudo guardar en la base de datos.", "error");
+                return;
             }
 
             closeBookingModal();
@@ -598,34 +631,7 @@
             }
 
             showCustomAlert("¡Reserva confirmada!", successMsg, "success");
-            if (!document.getElementById('tab-reservar').classList.contains('hidden')) {
-                searchRooms();
-            }
-            renderSchedule();
-        }
-
-        window.listenToBookings = function() {
-            if (!db || !currentUserId) return;
-            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
-            const q = query(colRef);
-            
-            try {
-                onSnapshot(q, (snapshot) => {
-                    let dynamicBookings = [];
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        dynamicBookings.push({ ...data, _firebaseId: doc.id });
-                    });
-                    bookings = [...bookings.slice(0, 40), ...dynamicBookings]; 
-                    if (!document.getElementById('tab-horarios').classList.contains('hidden')) {
-                        renderSchedule();
-                    }
-                }, (error) => {
-                    console.log("Firebase activo en modo local debido a permisos de lectura.");
-                });
-            } catch (error) {
-                console.log("Continuando en modo memoria local.");
-            }
+            // No hace falta llamar a renderSchedule porque onSnapshot lo actualizará solo
         }
 
         window.renderSchedule = function() {
@@ -652,21 +658,24 @@
                     const td = document.createElement('td');
                     td.className = "border p-3 align-top min-w-[140px]";
                     
-                    const slotBookings = bookings.filter(b => b.room_id === roomId && b.hour === h && b.dayOfWeek === d);
+                    const slotBookings = allBookings.filter(b => b.room_id === roomId && b.hour === h && b.dayOfWeek === d);
                     
                     if (slotBookings.length > 0) {
                         slotBookings.forEach(book => {
                             const isPuntual = book.type === 'puntual';
                             const badgeColor = isPuntual ? 'bg-orange-100 text-orange-800 border-orange-200' : 'bg-green-100 text-green-800 border-green-200';
                             const label = isPuntual ? `Puntual (${book.specificDate})` : 'Fija';
-                            const safeId = book.id || book._firebaseId || 'temp_id';
+                            
+                            // Determinamos qué ID pasarle a la papelera (el de Firebase si lo tiene)
+                            const isFirebase = !!book._firebaseId;
+                            const deleteId = isFirebase ? book._firebaseId : book.id;
                             
                             const div = document.createElement('div');
                             div.className = `p-2 mb-2 rounded-md border text-xs ${badgeColor} shadow-sm relative group`;
                             div.innerHTML = `
                                 <div class="flex justify-between items-start">
                                     <div class="font-bold text-sm mb-1 truncate pr-6">${book.teacher}</div>
-                                    <button onclick="openPasswordModal('${safeId}')" class="text-red-500 hover:text-red-700 bg-white/90 p-1 rounded transition-colors absolute top-1 right-1 shadow-sm" title="Borrar reserva">
+                                    <button onclick="openPasswordModal('${deleteId}', ${isFirebase})" class="text-red-500 hover:text-red-700 bg-white/90 p-1 rounded transition-colors absolute top-1 right-1 shadow-sm" title="Borrar reserva">
                                         <i class="ph ph-trash text-base"></i>
                                     </button>
                                 </div>
@@ -685,8 +694,9 @@
             });
         }
 
-        window.openPasswordModal = function(bookingId) {
+        window.openPasswordModal = function(bookingId, isFirebase) {
             document.getElementById('delete-booking-id').value = bookingId;
+            document.getElementById('delete-is-firebase').value = isFirebase;
             document.getElementById('delete-password').value = '';
             document.getElementById('password-modal').classList.remove('hidden');
         }
@@ -695,56 +705,42 @@
             document.getElementById('password-modal').classList.add('hidden');
         }
         
-        window.confirmDelete = function() {
+        window.confirmDelete = async function() {
             const pass = document.getElementById('delete-password').value;
             if (pass === '240627') {
                 const bookingId = document.getElementById('delete-booking-id').value;
-                bookings = bookings.filter(b => b.id !== bookingId && b._firebaseId !== bookingId);
-                closePasswordModal();
-                showCustomAlert("Reserva borrada", "La reserva se ha eliminado correctamente.", "success");
-                renderSchedule();
-                if (!document.getElementById('tab-reservar').classList.contains('hidden')) {
-                    searchRooms();
+                const isFirebase = document.getElementById('delete-is-firebase').value === 'true';
+                
+                if (isFirebase) {
+                    try {
+                        await deleteDoc(doc(db, "reservas", bookingId));
+                        showCustomAlert("Reserva borrada", "La reserva se ha eliminado de la base de datos.", "success");
+                    } catch (e) {
+                        showCustomAlert("Error", "No se pudo borrar.", "error");
+                    }
+                } else {
+                    // Si es de las fijas del código, se oculta temporalmente
+                    defaultBookings = defaultBookings.filter(b => b.id !== bookingId);
+                    allBookings = [...defaultBookings, ...firebaseBookings];
+                    showCustomAlert("Reserva borrada", "Reserva fija eliminada temporalmente. Para quitarla del todo, modifícala en el código base.", "success");
+                    renderSchedule();
+                    if (!document.getElementById('tab-reservar').classList.contains('hidden')) {
+                        searchRooms();
+                    }
                 }
+                
+                closePasswordModal();
             } else {
                 showCustomAlert("Error", "La clave introducida es incorrecta.", "error");
                 document.getElementById('delete-password').value = '';
             }
         }
 
-        window.startApplication = async function() {
+        // Inicializamos
+        window.onload = function() {
             initApp();
             renderSchedule();
-            
-            try {
-                if (typeof __firebase_config !== 'undefined') {
-                    const firebaseConfig = JSON.parse(__firebase_config);
-                    const app = initializeApp(firebaseConfig);
-                    db = getFirestore(app);
-                    auth = getAuth(app);
-                    
-                    try {
-                        if (typeof __initial_auth_token !== 'undefined') {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (authError) {
-                        await signInAnonymously(auth);
-                    }
-                    
-                    currentUserId = auth.currentUser?.uid;
-                    if(currentUserId) {
-                        isFirebaseInitialized = true;
-                        listenToBookings();
-                    }
-                }
-            } catch (error) {
-                isFirebaseInitialized = false;
-            }
         }
-
-        startApplication();
     </script>
 </body>
 </html>
