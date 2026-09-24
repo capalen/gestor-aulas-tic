@@ -1,5 +1,3 @@
-Aquí tienes el Manual Completo actualizado y ampliado con todas esas características clave integradas, para que cualquier compañero o Coordinador TIC entienda el potencial completo de la herramienta desde el primer momento.
-
 ---
 
 # Manual: Implantación y Uso del Gestor de Aulas TIC
