@@ -3,267 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Aulas TIC - Centro Educativo</title>
-    <!-- Tailwind CSS -->
+    <title>Gestor de Aulas TIC</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Iconos Phosphor -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
-        .tab-inactive { color: #6b7280; font-weight: 500; }
-        .tab-inactive:hover { color: #374151; }
-        .hidden { display: none !important; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-overlay { animation: fadeIn 0.2s ease-out; }
-        .modal-content { animation: slideUp 0.3s ease-out; }
+        .tab-btn.active { border-bottom: 2px solid #2563eb; color: #1d4ed8; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="text-gray-800 min-h-screen flex flex-col">
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
 
-    <header class="bg-blue-600 text-white shadow-md">
-        <div class="max-w-5xl mx-auto px-4 py-6 flex justify-between items-center flex-wrap gap-4">
-            <div class="flex items-center gap-3">
-                <i class="ph ph-chalkboard-teacher text-4xl"></i>
-                <div>
-                    <h1 class="text-2xl font-bold">Gestor de Aulas y Recursos TIC</h1>
-                    <p class="text-blue-100 text-sm">Reserva de espacios de forma rápida y sencilla</p>
-                </div>
+    <!-- CABECERA -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Gestor de Aulas y Recursos TIC</h1>
+                <p class="text-sm text-gray-500 font-medium">Creado por Carlos Pérez Sierra</p>
             </div>
-            <div class="text-right">
-                <h2 class="text-xl font-bold text-white">IES Condes de Saldaña</h2>
-                <p class="text-blue-200 text-sm">Creado por Carlos Pérez Sierra</p>
-            </div>
-        </div>
-        <div class="bg-white text-gray-800 border-b">
-            <div class="max-w-5xl mx-auto px-4 flex gap-6">
-                <button id="btn-tab-reservar" class="py-3 px-2 tab-active transition-colors flex items-center gap-2" onclick="switchTab('reservar')">
-                    <i class="ph ph-calendar-plus text-lg"></i> Buscar y Reservar
-                </button>
-                <button id="btn-tab-horarios" class="py-3 px-2 tab-inactive transition-colors flex items-center gap-2" onclick="switchTab('horarios')">
-                    <i class="ph ph-table text-lg"></i> Ver Horarios
+            <div class="flex items-center gap-4">
+                <div id="ui-school-name" class="text-lg font-bold text-blue-800 hidden sm:block">Cargando...</div>
+                <button onclick="promptAdmin()" class="text-gray-400 hover:text-gray-700 transition" title="Administración">
+                    <i class="fas fa-cog text-2xl"></i>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow max-w-5xl mx-auto px-4 py-8 w-full">
+    <!-- NAVEGACIÓN -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div class="flex border-b border-gray-200">
+            <button onclick="switchTab('reserva')" id="btn-reserva" class="tab-btn active px-6 py-3 text-gray-500 hover:text-gray-700">Buscar y Reservar</button>
+            <button onclick="switchTab('horarios')" id="btn-horarios" class="tab-btn px-6 py-3 text-gray-500 hover:text-gray-700">Ver Horarios</button>
+            <button onclick="switchTab('admin')" id="btn-admin" class="tab-btn px-6 py-3 text-gray-500 hover:text-gray-700 hidden">Administración</button>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- PESTAÑA: BUSCAR Y RESERVAR -->
-        <section id="tab-reservar" class="space-y-8">
-            
-            <!-- Buscador -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700 flex items-center gap-2">
-                    <i class="ph ph-magnifying-glass text-blue-500"></i> ¿Qué necesitas y cuándo?
-                </h2>
-                <form id="search-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" onsubmit="event.preventDefault(); searchRooms();">
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Día de reserva *</label>
-                        <input type="date" id="search-date" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-                        <p class="text-xs text-gray-400 mt-1">Excluye festivos y fines de semana</p>
-                    </div>
+        <!-- ESTADO DE CARGA -->
+        <div id="loading-state" class="flex justify-center items-center py-20">
+            <div class="loader mr-3"></div>
+            <span class="text-gray-500">Conectando con la base de datos...</span>
+        </div>
 
+        <!-- PESTAÑA 1: RESERVAS -->
+        <div id="tab-reserva" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Hora *</label>
-                        <select id="search-hour" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
-                            <option value="" disabled selected>Elige una hora...</option>
-                            <option value="1">1ª Hora</option>
-                            <option value="2">2ª Hora</option>
-                            <option value="3">3ª Hora</option>
-                            <option value="4">4ª Hora</option>
-                            <option value="5">5ª Hora</option>
-                            <option value="6">6ª Hora</option>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                        <input type="date" id="search-date" class="w-full border rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                        <select id="search-time" class="w-full border rounded-md p-2">
+                            <option value="1">1ª Hora</option><option value="2">2ª Hora</option>
+                            <option value="3">3ª Hora</option><option value="4">4ª Hora</option>
+                            <option value="5">5ª Hora</option><option value="6">6ª Hora</option>
                         </select>
                     </div>
-
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Nivel Educativo *</label>
-                        <select id="search-level" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
-                            <option value="" disabled selected>Selecciona nivel...</option>
-                            <option value="ESO">ESO</option>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nivel Educativo</label>
+                        <select id="search-level" class="w-full border rounded-md p-2">
+                            <option value="ESO">ESO / DIVER</option>
                             <option value="Bachillerato">Bachillerato</option>
-                            <option value="Ambos">Común / Diversificación</option>
                         </select>
                     </div>
-
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Nº Alumnos *</label>
-                        <input type="number" id="search-students" min="1" max="40" required placeholder="Ej: 20" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-                    </div>
-
-                    <div class="lg:col-span-4 flex justify-end mt-2">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-colors flex items-center gap-2">
-                            <i class="ph ph-check-circle"></i> Buscar Aulas Libres
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Resultados -->
-            <div id="results-container" class="hidden">
-                <h3 class="text-xl font-bold mb-4 text-gray-800" id="results-title">Aulas Disponibles</h3>
-                <div id="rooms-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    <!-- Tarjetas generadas por JS -->
-                </div>
-                <div id="no-results" class="hidden bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl p-6 text-center">
-                    <i class="ph ph-warning-circle text-4xl mb-2 text-yellow-600"></i>
-                    <p class="font-medium text-lg">No hay aulas disponibles</p>
-                    <p class="text-sm mt-1">Todas las aulas están ocupadas en ese tramo horario.</p>
-                </div>
-            </div>
-
-        </section>
-
-        <!-- PESTAÑA: HORARIOS -->
-        <section id="tab-horarios" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-semibold mb-4 text-gray-700">Consulta de Ocupación Semanal</h2>
-                <div class="flex gap-4 items-end mb-6">
-                    <div class="w-full max-w-sm">
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Selecciona un Aula</label>
-                        <select id="schedule-room-select" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" onchange="renderSchedule()">
-                            <!-- Relleno inmediato por JS -->
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nº Alumnos</label>
+                        <input type="number" id="search-students" value="20" class="w-full border rounded-md p-2">
                     </div>
                 </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse min-w-[600px]">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 text-sm">
-                                <th class="border p-3 w-20 text-center font-medium">Hora</th>
-                                <th class="border p-3 w-1/5 text-center font-medium">Lunes</th>
-                                <th class="border p-3 w-1/5 text-center font-medium">Martes</th>
-                                <th class="border p-3 w-1/5 text-center font-medium">Miércoles</th>
-                                <th class="border p-3 w-1/5 text-center font-medium">Jueves</th>
-                                <th class="border p-3 w-1/5 text-center font-medium">Viernes</th>
-                            </tr>
-                        </thead>
-                        <tbody id="schedule-tbody">
-                            <!-- Relleno por JS -->
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text-xs text-gray-500 mt-4 flex items-center gap-1">
-                    <i class="ph ph-info text-lg"></i> * Si necesitas anular un aula o modificar una reserva, ponte en contacto con el coordinador TIC.
-                </p>
+                <button onclick="searchRooms()" class="mt-4 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">Buscar Aulas Libres</button>
             </div>
-        </section>
+            <div id="search-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
 
+        <!-- PESTAÑA 2: HORARIOS -->
+        <div id="tab-horarios" class="tab-content">
+            <div class="bg-white rounded-lg shadow p-6 mb-6 flex justify-between items-center">
+                <div class="w-1/2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Selecciona un aula para ver su horario semanal:</label>
+                    <select id="schedule-room" class="w-full border rounded-md p-2" onchange="renderSchedule()"></select>
+                </div>
+                <div class="text-right text-sm text-gray-500 italic">
+                    * Si necesitas anular un aula o modificar una reserva, ponte en contacto con el coordinador TIC.
+                </div>
+            </div>
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hora</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Lunes</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Martes</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Miércoles</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Jueves</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Viernes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-body" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PESTAÑA 3: ADMINISTRACIÓN (Oculta por defecto) -->
+        <div id="tab-admin" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Configuración General -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-school mr-2"></i>Configuración General</h2>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Nombre del Centro</label>
+                        <input type="text" id="admin-school-name" class="w-full border rounded-md p-2 mt-1">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Inicio de Curso</label>
+                            <input type="date" id="admin-start-date" class="w-full border rounded-md p-2 mt-1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Fin de Curso</label>
+                            <input type="date" id="admin-end-date" class="w-full border rounded-md p-2 mt-1">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">PIN de Administración</label>
+                        <input type="text" id="admin-pin" class="w-full border rounded-md p-2 mt-1">
+                    </div>
+                    <button onclick="saveGeneralConfig()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full"><i class="fas fa-save mr-2"></i>Guardar Configuración General</button>
+                </div>
+
+                <!-- Festivos -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-calendar-times mr-2"></i>Días Festivos / No Lectivos</h2>
+                    <div class="flex gap-2 mb-4">
+                        <input type="date" id="new-holiday-date" class="flex-1 border rounded-md p-2">
+                        <input type="text" id="new-holiday-name" placeholder="Motivo (Ej. Navidad)" class="flex-1 border rounded-md p-2">
+                        <button onclick="addHoliday()" class="bg-blue-600 text-white px-4 rounded hover:bg-blue-700">Añadir</button>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto">
+                        <ul id="admin-holidays-list" class="divide-y divide-gray-200"></ul>
+                    </div>
+                </div>
+
+                <!-- Gestor de Aulas -->
+                <div class="bg-white rounded-lg shadow p-6 lg:col-span-2">
+                    <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-desktop mr-2"></i>Gestión de Aulas y Recursos</h2>
+                    <div class="overflow-x-auto mb-4">
+                        <table class="min-w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-gray-700">
+                                <tr><th>Nombre</th><th>Edificio</th><th>Equipos</th><th>Tipo</th><th>Conserjería</th><th>Acción</th></tr>
+                            </thead>
+                            <tbody id="admin-rooms-list" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-md border grid grid-cols-1 md:grid-cols-6 gap-2 items-end">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-700">Nombre Aula/Carro</label>
+                            <input type="text" id="new-room-name" class="w-full border rounded p-1 mt-1">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700">Edificio</label>
+                            <select id="new-room-location" class="w-full border rounded p-1 mt-1">
+                                <option value="ESO">ESO</option><option value="Bachillerato">Bachillerato</option><option value="General">General/Biblioteca</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700">Equipos</label>
+                            <input type="number" id="new-room-capacity" class="w-full border rounded p-1 mt-1">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700">Tipo</label>
+                            <select id="new-room-type" class="w-full border rounded p-1 mt-1">
+                                <option value="fija">Aula Fija</option><option value="movil">Carro Móvil</option><option value="especial">Especial (Audio/Taller)</option>
+                            </select>
+                        </div>
+                        <button onclick="addRoom()" class="bg-blue-600 text-white px-2 py-1.5 rounded hover:bg-blue-700">Añadir Aula</button>
+                    </div>
+                </div>
+
+                <!-- Zona de Peligro -->
+                <div class="bg-red-50 rounded-lg shadow p-6 lg:col-span-2 border border-red-200">
+                    <h2 class="text-lg font-bold text-red-700 mb-4 border-b border-red-200 pb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Mantenimiento y Zona de Peligro</h2>
+                    <div class="flex gap-4">
+                        <button onclick="exportToCSV()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow hover:bg-gray-50"><i class="fas fa-file-csv mr-2"></i>Exportar Reservas a Excel (CSV)</button>
+                        <button onclick="deleteAllReservations()" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700"><i class="fas fa-trash-alt mr-2"></i>Borrar TODAS las reservas (Nuevo Curso)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <!-- MODAL DE RESERVA -->
-    <div id="booking-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 modal-overlay">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md modal-content overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
-                <h3 class="font-bold text-lg" id="modal-room-name">Reservar Aula</h3>
-                <button onclick="closeBookingModal()" class="text-blue-100 hover:text-white transition-colors">
-                    <i class="ph ph-x text-2xl"></i>
-                </button>
+    <!-- Modal Reserva -->
+    <div id="reserve-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4" id="modal-title">Confirmar Reserva</h3>
+            <div id="modal-warning" class="hidden mb-4 p-3 bg-yellow-100 text-yellow-800 text-sm rounded-md font-medium border border-yellow-300">
+                ⚠️ Recuerda: Es obligatorio avisar a Conserjería para que acerquen este recurso al aula.
             </div>
-
-            <div class="p-6 overflow-y-auto">
-                <div class="mb-5 bg-blue-50 p-3 rounded-lg border border-blue-100 flex gap-3 text-sm text-blue-800">
-                    <i class="ph ph-info mt-0.5 text-lg"></i>
-                    <div>
-                        <p><strong>Fecha:</strong> <span id="modal-date-display"></span></p>
-                        <p><strong>Hora:</strong> <span id="modal-hour-display"></span>ª Hora</p>
-                    </div>
+            <div class="space-y-4">
+                <div><label class="block text-sm font-medium text-gray-700">Tu Nombre</label><input type="text" id="res-name" class="w-full border rounded p-2 mt-1"></div>
+                <div><label class="block text-sm font-medium text-gray-700">Curso (Ej. 1º ESO A)</label><input type="text" id="res-course" class="w-full border rounded p-2 mt-1"></div>
+                <div><label class="block text-sm font-medium text-gray-700">Materia</label><input type="text" id="res-subject" class="w-full border rounded p-2 mt-1"></div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Duración</label>
+                    <select id="res-type" class="w-full border rounded p-2 mt-1">
+                        <option value="puntual">Solo este día puntual</option>
+                        <option value="trimestre">Fijo para todo el curso</option>
+                    </select>
                 </div>
-
-                <div id="modal-mobile-warning" class="hidden mb-5 bg-orange-50 p-4 rounded-lg border border-orange-200 text-orange-800 text-sm flex gap-3">
-                    <i class="ph ph-warning-circle text-2xl text-orange-500"></i>
-                    <p><strong>¡Atención!</strong> Además de confirmar esta reserva, <strong>debes avisar a las conserjes</strong> para que acerquen el carro de ordenadores/tabletas al aula el día seleccionado.</p>
-                </div>
-
-                <form id="booking-form" onsubmit="event.preventDefault(); submitBooking();" class="space-y-4">
-                    <input type="hidden" id="modal-room-id">
-                    <input type="hidden" id="modal-date-raw">
-                    <input type="hidden" id="modal-hour-raw">
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Profesor/a *</label>
-                        <input type="text" id="b-teacher" required placeholder="Ej. Carlos" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Curso *</label>
-                            <input type="text" id="b-course" required placeholder="Ej. 4º ESO B" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Materia *</label>
-                            <input type="text" id="b-subject" required placeholder="Ej. TIC" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de reserva *</label>
-                        <select id="b-type" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-                            <option value="puntual">Solo este día (Puntual)</option>
-                            <option value="trimestre">Todo el curso/trimestre (Fija semanal)</option>
-                        </select>
-                    </div>
-
-                    <div class="pt-4 flex gap-3">
-                        <button type="button" onclick="closeBookingModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors">
-                            Cancelar
-                        </button>
-                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-sm">
-                            Confirmar Reserva
-                        </button>
-                    </div>
-                </form>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+                <button onclick="confirmReservation()" class="px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">Guardar Reserva</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE ALERTAS -->
-    <div id="alert-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 modal-overlay">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm text-center p-6 modal-content">
-            <div id="alert-icon" class="mb-4 flex justify-center"></div>
-            <h3 id="alert-title" class="text-lg font-bold text-gray-800 mb-2">Mensaje</h3>
-            <p id="alert-message" class="text-gray-600 mb-6 text-sm"></p>
-            <button onclick="closeAlert()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-                Entendido
-            </button>
-        </div>
-    </div>
-
-    <!-- MODAL DE CLAVE PARA BORRAR -->
-    <div id="password-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 modal-overlay">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm text-center p-6 modal-content">
-            <div class="mb-4 flex justify-center text-red-500">
-                <i class="ph ph-trash text-5xl"></i>
-            </div>
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Borrar Reserva</h3>
-            <p class="text-gray-600 mb-4 text-sm">Introduce la clave del coordinador:</p>
-            <input type="password" id="delete-password" class="w-full p-2.5 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none text-center text-lg tracking-widest" placeholder="******">
-            <input type="hidden" id="delete-booking-id">
-            <input type="hidden" id="delete-is-firebase">
-            <div class="flex gap-3">
-                <button onclick="closePasswordModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors">
-                    Cancelar
-                </button>
-                <button onclick="confirmDelete()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 rounded-lg transition-colors">
-                    Borrar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- SCRIPT PRINCIPAL (MÓDULO FIREBASE) -->
+    <!-- Scripts Core & Firebase -->
     <script type="module">
-        // Importaciones de Firebase (V10 para web directa)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Aquí van tus llaves
+        // TUS LLAVES DE FIREBASE (No tocar)
         const firebaseConfig = {
             apiKey: "AIzaSyBs69L8fBroxFwcJ3sMFGcDHwIuXmSkVMg",
             authDomain: "gestoraulas-5192c.firebaseapp.com",
@@ -273,474 +239,418 @@
             appId: "1:864557710919:web:e45f5071d6ae370d78bb62"
         };
 
-        // Inicializamos Firebase y la Base de Datos
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Referencia a la colección 'reservas' en Firestore
-        const reservasCol = collection(db, 'reservas');
+        // Variables Globales
+        let systemConfig = {};
+        let allReservations = [];
+        let pendingReservation = null;
 
-        const rooms = [
-            { id: 'atenea', name: 'Atenea', capacity: 25, location: 'Edificio Bachillerato', mobile: false },
-            { id: 'taller', name: 'Taller Tecnología', capacity: 20, location: 'Edificio Bachillerato', mobile: false },
-            { id: 'pascal', name: 'Pascal', capacity: 18, location: 'Edificio Bachillerato', mobile: false },
-            { id: 'digital', name: 'Digital', capacity: 15, location: 'Edificio ESO', mobile: false },
-            { id: 'movil_eso', name: 'Móvil ESO', capacity: 24, location: 'Edificio ESO', mobile: true },
-            { id: 'movil_bach', name: 'Móvil Bachillerato', capacity: 15, location: 'Edificio Bachillerato', mobile: true },
-            { id: 'tabletas', name: 'Tabletas', capacity: 24, location: 'Edificio ESO Biblioteca', mobile: true },
-            { id: 'audiovisuales', name: 'Audiovisuales (Radio y Vídeo)', capacity: 1, location: 'General', mobile: false }
-        ];
+        // VALORES POR DEFECTO (Si es la primera vez que se ejecuta)
+        const defaultConfig = {
+            schoolName: "IES Condes de Saldaña",
+            adminPin: "240727",
+            startDate: "2026-09-01",
+            endDate: "2027-06-24",
+            holidays: [
+                { date: "2026-10-12", name: "Día del Pilar" },
+                { date: "2026-10-30", name: "Día del Docente" },
+                { date: "2026-11-02", name: "Todos los Santos" },
+                { date: "2026-12-07", name: "Puente Constitución" },
+                { date: "2026-12-08", name: "Puente Constitución" },
+                { date: "2027-02-08", name: "Carnavales" },
+                { date: "2027-02-09", name: "Carnavales" },
+                { date: "2027-04-23", name: "Día de Castilla y León" },
+                { date: "2027-05-01", name: "Día del Trabajo" }
+            ],
+            rooms: [
+                { id: "r1", name: "Atenea", capacity: 25, location: "Bachillerato", type: "fija" },
+                { id: "r2", name: "Taller Tecnología", capacity: 20, location: "Bachillerato", type: "fija" },
+                { id: "r3", name: "Pascal", capacity: 18, location: "Bachillerato", type: "fija" },
+                { id: "r4", name: "Digital", capacity: 15, location: "ESO", type: "fija" },
+                { id: "r5", name: "Móvil ESO", capacity: 24, location: "ESO", type: "movil", reqConserje: true },
+                { id: "r6", name: "Móvil Bachillerato", capacity: 15, location: "Bachillerato", type: "movil", reqConserje: true },
+                { id: "r7", name: "Tabletas", capacity: 24, location: "General", type: "movil", reqConserje: true },
+                { id: "r8", name: "Audiovisuales", capacity: 1, location: "General", type: "especial" }
+            ]
+        };
 
-        // Reservas Fijas del código
-        let defaultBookings = [
-            // CARLOS
-            { id: 'c1', room_id: 'atenea', dayOfWeek: 1, hour: 1, teacher: 'Carlos', course: '4º ESO', subject: 'Digitalización', type: 'trimestre' },
-            { id: 'c2', room_id: 'atenea', dayOfWeek: 1, hour: 2, teacher: 'Carlos', course: '3º ESO', subject: 'Control y Robótica', type: 'trimestre' },
-            { id: 'c3', room_id: 'atenea', dayOfWeek: 1, hour: 5, teacher: 'Carlos', course: '1º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            { id: 'c4', room_id: 'atenea', dayOfWeek: 2, hour: 3, teacher: 'Carlos', course: '1º Bachillerato', subject: 'TIC I', type: 'trimestre' },
-            { id: 'c5', room_id: 'atenea', dayOfWeek: 2, hour: 5, teacher: 'Carlos', course: '1º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            { id: 'c6', room_id: 'atenea', dayOfWeek: 3, hour: 2, teacher: 'Carlos', course: '4º ESO', subject: 'Programación Informática', type: 'trimestre' },
-            { id: 'c7', room_id: 'atenea', dayOfWeek: 3, hour: 4, teacher: 'Carlos', course: '3º ESO', subject: 'Control y Robótica', type: 'trimestre' },
-            { id: 'c8', room_id: 'atenea', dayOfWeek: 3, hour: 6, teacher: 'Carlos', course: '1º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            { id: 'c9', room_id: 'atenea', dayOfWeek: 4, hour: 6, teacher: 'Carlos', course: '1º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            { id: 'c10', room_id: 'atenea', dayOfWeek: 5, hour: 1, teacher: 'Carlos', course: '4º ESO', subject: 'Digitalización', type: 'trimestre' },
-            { id: 'c11', room_id: 'atenea', dayOfWeek: 5, hour: 2, teacher: 'Carlos', course: '4º ESO', subject: 'Programación Informática', type: 'trimestre' },
-            { id: 'c12', room_id: 'atenea', dayOfWeek: 5, hour: 3, teacher: 'Carlos', course: '1º Bachillerato', subject: 'TIC I', type: 'trimestre' },
-            // DIANA
-            { id: 'd1', room_id: 'atenea', dayOfWeek: 1, hour: 4, teacher: 'Diana', course: '1º ESO A', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd2', room_id: 'atenea', dayOfWeek: 2, hour: 2, teacher: 'Diana', course: '1º ESO A', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd3', room_id: 'atenea', dayOfWeek: 5, hour: 5, teacher: 'Diana', course: '1º ESO A', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd11', room_id: 'atenea', dayOfWeek: 4, hour: 1, teacher: 'Diana', course: '1º ESO A', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd4', room_id: 'taller', dayOfWeek: 1, hour: 1, teacher: 'Diana', course: '3º DIVER', subject: 'Ámbito Práctico', type: 'trimestre' },
-            { id: 'd5', room_id: 'taller', dayOfWeek: 1, hour: 6, teacher: 'Diana', course: '1º ESO B', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd6', room_id: 'taller', dayOfWeek: 2, hour: 1, teacher: 'Diana', course: '3º ESO B', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd7', room_id: 'taller', dayOfWeek: 3, hour: 1, teacher: 'Diana', course: '1º ESO B', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd8', room_id: 'taller', dayOfWeek: 3, hour: 2, teacher: 'Diana', course: '3º ESO B', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'd9', room_id: 'taller', dayOfWeek: 4, hour: 2, teacher: 'Diana', course: '3º DIVER', subject: 'Ámbito Práctico', type: 'trimestre' },
-            { id: 'd10', room_id: 'taller', dayOfWeek: 4, hour: 4, teacher: 'Diana', course: '1º ESO B', subject: 'Tecnología', type: 'trimestre' },
-            // ANA
-            { id: 'a1', room_id: 'taller', dayOfWeek: 1, hour: 4, teacher: 'Ana', course: '2º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            { id: 'a2', room_id: 'taller', dayOfWeek: 2, hour: 2, teacher: 'Ana', course: '2º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            { id: 'a3', room_id: 'taller', dayOfWeek: 2, hour: 6, teacher: 'Ana', course: '4ºDIVER', subject: 'Ámbito Científico Tecnológico', type: 'trimestre' },
-            { id: 'a4', room_id: 'taller', dayOfWeek: 3, hour: 6, teacher: 'Ana', course: '3º ESO A', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'a5', room_id: 'taller', dayOfWeek: 4, hour: 4, teacher: 'Ana', course: '3º ESO A', subject: 'Tecnología', type: 'trimestre' },
-            { id: 'a6', room_id: 'taller', dayOfWeek: 4, hour: 5, teacher: 'Ana', course: '2º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            { id: 'a7', room_id: 'taller', dayOfWeek: 5, hour: 3, teacher: 'Ana', course: '4ºDIVER', subject: 'Ámbito Científico Tecnológico', type: 'trimestre' },
-            { id: 'a8', room_id: 'taller', dayOfWeek: 5, hour: 4, teacher: 'Ana', course: '4ºDIVER', subject: 'Ámbito Científico Tecnológico', type: 'trimestre' },
-            { id: 'a9', room_id: 'taller', dayOfWeek: 5, hour: 5, teacher: 'Ana', course: '2º Bachillerato', subject: 'Tecnología e Ingeniería', type: 'trimestre' },
-            // MARÍA
-            { id: 'm1', room_id: 'taller', dayOfWeek: 3, hour: 4, teacher: 'María', course: '1º Bachillerato', subject: 'Filosofía', type: 'trimestre' },
-            // LUCÍA
-            { id: 'l1', room_id: 'digital', dayOfWeek: 5, hour: 2, teacher: 'Lucía', course: '3º ESO', subject: 'MAE', type: 'trimestre' },
-            // DANIEL
-            { id: 'dan1', room_id: 'digital', dayOfWeek: 5, hour: 1, teacher: 'Daniel', course: '1º ESO A-B', subject: 'MAE', type: 'trimestre' },
-            // GIOMAR
-            { id: 'g1', room_id: 'digital', dayOfWeek: 3, hour: 4, teacher: 'Giomar', course: '2º ESO B', subject: 'MAE', type: 'trimestre' },
-            { id: 'g2', room_id: 'digital', dayOfWeek: 4, hour: 2, teacher: 'Giomar', course: '2º ESO B', subject: 'MAE', type: 'trimestre' }
-        ];
-
-        // Esta lista contiene las fijas + las de la base de datos
-        let allBookings = [...defaultBookings];
-        let firebaseBookings = [];
-
-        // Leer datos en tiempo real de Firebase
-        onSnapshot(reservasCol, (snapshot) => {
-            firebaseBookings = [];
-            snapshot.forEach((doc) => {
-                firebaseBookings.push({ ...doc.data(), _firebaseId: doc.id });
-            });
-            allBookings = [...defaultBookings, ...firebaseBookings];
-            
-            // Actualizar vistas si están abiertas
-            if (!document.getElementById('tab-horarios').classList.contains('hidden')) {
-                renderSchedule();
-            }
-            if (!document.getElementById('results-container').classList.contains('hidden')) {
-                searchRooms(); // Vuelve a buscar por si le han quitado el aula mientras miraba
-            }
-        });
-
-        const nonTeachingDays = [
-            "2026-10-12", "2026-10-30", "2026-11-02", "2026-12-07", "2026-12-08",
-            "2027-02-08", "2027-02-09", "2027-04-23", "2027-05-01"
-        ];
-
-        const holidayRanges = [
-            { start: "2026-12-23", end: "2027-01-10", name: "Vacaciones de Navidad" },
-            { start: "2027-03-20", end: "2027-03-30", name: "Vacaciones de Semana Santa" }
-        ];
-
-        const endOfTermDate = "2027-06-24";
-        
-        window.initApp = function() {
-            const dateInput = document.getElementById('search-date');
-            if(!dateInput) return;
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            dateInput.min = `${yyyy}-${mm}-${dd}`;
-            dateInput.max = endOfTermDate;
-            
-            dateInput.addEventListener('change', (e) => {
-                const selectedDateStr = e.target.value;
-                if (!selectedDateStr) return;
-
-                const selectedDate = new Date(selectedDateStr + 'T00:00:00');
-                const day = selectedDate.getDay();
-                
-                if (day === 0 || day === 6) { 
-                    showCustomAlert("Fin de semana", "No se pueden realizar reservas en fines de semana.", "warning");
-                    e.target.value = '';
-                    return;
-                }
-
-                if (selectedDateStr >= endOfTermDate) {
-                    showCustomAlert("Fin de Curso", "El periodo lectivo ordinario termina el 24 de junio.", "warning");
-                    e.target.value = '';
-                    return;
-                }
-
-                if (nonTeachingDays.includes(selectedDateStr)) {
-                    showCustomAlert("Día No Lectivo", "La fecha seleccionada corresponde a un día festivo.", "warning");
-                    e.target.value = '';
-                    return;
-                }
-
-                for (const range of holidayRanges) {
-                    if (selectedDateStr >= range.start && selectedDateStr <= range.end) {
-                        showCustomAlert("Periodo Vacacional", `La fecha seleccionada cae en: ${range.name}.`, "warning");
-                        e.target.value = '';
-                        return;
-                    }
-                }
-            });
-
-            populateScheduleSelector();
-        }
-
-        window.populateScheduleSelector = function() {
-            const scheduleSelect = document.getElementById('schedule-room-select');
-            if(!scheduleSelect) return;
-            scheduleSelect.innerHTML = '';
-            rooms.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r.id;
-                opt.textContent = r.id === 'audiovisuales' ? `${r.name}` : `${r.name} (${r.capacity} equipos)`;
-                scheduleSelect.appendChild(opt);
-            });
-        }
-
-        window.switchTab = function(tab) {
-            document.getElementById('tab-reservar').classList.add('hidden');
-            document.getElementById('tab-horarios').classList.add('hidden');
-            document.getElementById('btn-tab-reservar').className = "py-3 px-2 tab-inactive transition-colors flex items-center gap-2";
-            document.getElementById('btn-tab-horarios').className = "py-3 px-2 tab-inactive transition-colors flex items-center gap-2";
-            
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.getElementById(`btn-tab-${tab}`).className = "py-3 px-2 tab-active transition-colors flex items-center gap-2";
-            
-            if (tab === 'horarios') renderSchedule();
-        }
-
-        window.showCustomAlert = function(title, message, type = 'info') {
-            document.getElementById('alert-title').innerText = title;
-            document.getElementById('alert-message').innerText = message;
-            
-            let iconHtml = '';
-            if (type === 'success') iconHtml = '<i class="ph ph-check-circle text-5xl text-green-500"></i>';
-            else if (type === 'warning') iconHtml = '<i class="ph ph-warning text-5xl text-orange-500"></i>';
-            else if (type === 'error') iconHtml = '<i class="ph ph-x-circle text-5xl text-red-500"></i>';
-            else iconHtml = '<i class="ph ph-info text-5xl text-blue-500"></i>';
-            
-            document.getElementById('alert-icon').innerHTML = iconHtml;
-            document.getElementById('alert-modal').classList.remove('hidden');
-        }
-
-        window.closeAlert = function() {
-            document.getElementById('alert-modal').classList.add('hidden');
-        }
-
-        window.getFormattedDateEsp = function(dateString) {
-            const date = new Date(dateString + 'T00:00:00');
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            let result = date.toLocaleDateString('es-ES', options);
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        }
-
-        window.searchRooms = function() {
-            const dateStr = document.getElementById('search-date').value;
-            const hour = parseInt(document.getElementById('search-hour').value);
-            const students = parseInt(document.getElementById('search-students').value);
-            const level = document.getElementById('search-level').value;
-            
-            if (!dateStr || !hour || !students || !level) return;
-
-            const targetDate = new Date(dateStr + 'T00:00:00');
-            const dayOfWeek = targetDate.getDay();
-
-            let availableRooms = rooms.filter(room => {
-                const isOccupied = allBookings.some(b => {
-                    if (b.room_id !== room.id || b.hour !== hour) return false;
-                    if (b.type === 'trimestre' && b.dayOfWeek === dayOfWeek) return true;
-                    if (b.type === 'puntual' && b.specificDate === dateStr) return true;
-                    return false;
-                });
-                return !isOccupied;
-            });
-
-            availableRooms.sort((a, b) => {
-                if (a.id === 'audiovisuales') return 1; 
-                if (b.id === 'audiovisuales') return -1;
-
-                const aMatch = (level === 'Bachillerato' && a.location.includes('Bachillerato')) ||
-                               (level === 'ESO' && a.location.includes('ESO'));
-                const bMatch = (level === 'Bachillerato' && b.location.includes('Bachillerato')) ||
-                               (level === 'ESO' && b.location.includes('ESO'));
-
-                if (aMatch && !bMatch) return -1;
-                if (!aMatch && bMatch) return 1;
-
-                return b.capacity - a.capacity;
-            });
-
-            renderResults(availableRooms, dateStr, hour, students);
-        }
-
-        window.renderResults = function(availableRooms, dateStr, hour, requestedStudents) {
-            document.getElementById('results-container').classList.remove('hidden');
-            const grid = document.getElementById('rooms-grid');
-            const noResults = document.getElementById('no-results');
-            
-            grid.innerHTML = '';
-            
-            if (availableRooms.length === 0) {
-                grid.classList.add('hidden');
-                noResults.classList.remove('hidden');
-            } else {
-                grid.classList.remove('hidden');
-                noResults.classList.add('hidden');
-                
-                availableRooms.forEach(room => {
-                    let typeBadge = room.mobile 
-                        ? `<span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-md border border-orange-200 flex items-center gap-1 w-max"><i class="ph ph-device-mobile"></i> Móvil/Carro</span>`
-                        : `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-md border border-blue-200 flex items-center gap-1 w-max"><i class="ph ph-desktop"></i> Aula Fija</span>`;
-
-                    let capacityInfo = "";
-                    if (room.id === 'audiovisuales') {
-                        capacityInfo = `<p class="flex items-center gap-2"><i class="ph ph-video-camera text-gray-400"></i> Aula de edición (1 equipo principal)</p>`;
-                    } else {
-                        capacityInfo = `<p class="flex items-center gap-2"><i class="ph ph-users text-gray-400"></i> ${room.capacity} equipos max.</p>`;
-                        if (room.capacity < requestedStudents) {
-                            capacityInfo += `<p class="text-xs text-orange-600 font-medium flex items-center gap-1"><i class="ph ph-warning"></i> Aforo ajustado (${room.capacity} vs ${requestedStudents} alum.)</p>`;
-                        }
-                    }
-
-                    const card = document.createElement('div');
-                    card.className = "bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between h-full";
-                    card.innerHTML = `
-                        <div>
-                            <div class="flex justify-between items-start mb-3">
-                                <h4 class="font-bold text-gray-800 text-lg">${room.name}</h4>
-                                ${typeBadge}
-                            </div>
-                            <div class="text-sm text-gray-600 space-y-2 mb-4">
-                                ${capacityInfo}
-                                <p class="flex items-center gap-2"><i class="ph ph-map-pin text-gray-400"></i> ${room.location}</p>
-                            </div>
-                        </div>
-                        <button onclick="openBookingModal('${room.id}', '${dateStr}', ${hour})" class="w-full bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border border-blue-200 font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
-                            <i class="ph ph-bookmark-simple"></i> Seleccionar
-                        </button>
-                    `;
-                    grid.appendChild(card);
-                });
-            }
-        }
-
-        window.openBookingModal = function(roomId, dateStr, hour) {
-            const room = rooms.find(r => r.id === roomId);
-            if (!room) return;
-
-            document.getElementById('modal-room-name').innerText = `Reservar: ${room.name}`;
-            document.getElementById('modal-date-display').innerText = getFormattedDateEsp(dateStr);
-            document.getElementById('modal-hour-display').innerText = hour;
-            
-            document.getElementById('modal-room-id').value = roomId;
-            document.getElementById('modal-date-raw').value = dateStr;
-            document.getElementById('modal-hour-raw').value = hour;
-
-            document.getElementById('b-teacher').value = '';
-            document.getElementById('b-course').value = '';
-            document.getElementById('b-subject').value = '';
-            document.getElementById('b-type').value = 'puntual';
-
-            const warningEl = document.getElementById('modal-mobile-warning');
-            if (room.mobile) {
-                warningEl.classList.remove('hidden');
-            } else {
-                warningEl.classList.add('hidden');
-            }
-
-            document.getElementById('booking-modal').classList.remove('hidden');
-        }
-
-        window.closeBookingModal = function() {
-            document.getElementById('booking-modal').classList.add('hidden');
-        }
-
-        window.submitBooking = async function() {
-            const roomId = document.getElementById('modal-room-id').value;
-            const dateStr = document.getElementById('modal-date-raw').value;
-            const hour = parseInt(document.getElementById('modal-hour-raw').value);
-            const teacher = document.getElementById('b-teacher').value.trim();
-            const course = document.getElementById('b-course').value.trim();
-            const subject = document.getElementById('b-subject').value.trim();
-            const reserveType = document.getElementById('b-type').value;
-
-            const targetDate = new Date(dateStr + 'T00:00:00');
-            const dayOfWeek = targetDate.getDay(); 
-
-            const newBooking = {
-                room_id: roomId,
-                hour: hour,
-                teacher: teacher,
-                course: course,
-                subject: subject,
-                type: reserveType,
-                dayOfWeek: dayOfWeek,
-                specificDate: reserveType === 'puntual' ? dateStr : null,
-                timestamp: Date.now()
-            };
-
-            // Guarda en Firestore
+        // INICIALIZACIÓN DE DATOS
+        async function initData() {
             try {
-                await addDoc(reservasCol, newBooking);
+                // Cargar o crear configuración
+                const configRef = doc(db, "configuracion", "general");
+                const configSnap = await getDoc(configRef);
+                
+                if (configSnap.exists()) {
+                    systemConfig = configSnap.data();
+                } else {
+                    await setDoc(configRef, defaultConfig);
+                    systemConfig = defaultConfig;
+                }
+                
+                updateUIWithConfig();
+
+                // Escuchar reservas en tiempo real
+                onSnapshot(collection(db, "reservas"), (snapshot) => {
+                    allReservations = [];
+                    snapshot.forEach(doc => allReservations.push({ id: doc.id, ...doc.data() }));
+                    renderSchedule(); // Refrescar horario visual
+                    
+                    // Ocultar pantalla de carga
+                    document.getElementById('loading-state').style.display = 'none';
+                    document.getElementById('tab-reserva').classList.add('active');
+                });
             } catch (e) {
-                console.error("Error guardando reserva: ", e);
-                showCustomAlert("Error", "No se pudo guardar en la base de datos.", "error");
+                alert("Error de conexión. Las reservas no se guardarán en la nube.");
+                systemConfig = defaultConfig;
+                updateUIWithConfig();
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('tab-reserva').classList.add('active');
+            }
+        }
+
+        function updateUIWithConfig() {
+            document.getElementById('ui-school-name').textContent = systemConfig.schoolName;
+            
+            // Llenar selectores de aulas
+            const select = document.getElementById('schedule-room');
+            select.innerHTML = '<option value="">-- Selecciona un aula --</option>';
+            systemConfig.rooms.forEach(room => {
+                select.innerHTML += `<option value="${room.id}">${room.name}</option>`;
+            });
+
+            // Actualizar min/max fechas en buscador
+            const dateInput = document.getElementById('search-date');
+            dateInput.min = systemConfig.startDate;
+            dateInput.max = systemConfig.endDate;
+            
+            // Si hoy está en rango, poner hoy por defecto
+            const today = new Date().toISOString().split('T')[0];
+            if(today >= systemConfig.startDate && today <= systemConfig.endDate) dateInput.value = today;
+
+            // Rellenar panel admin
+            document.getElementById('admin-school-name').value = systemConfig.schoolName;
+            document.getElementById('admin-pin').value = systemConfig.adminPin;
+            document.getElementById('admin-start-date').value = systemConfig.startDate;
+            document.getElementById('admin-end-date').value = systemConfig.endDate;
+            renderAdminHolidays();
+            renderAdminRooms();
+        }
+
+        // --- LÓGICA DE BÚSQUEDA ---
+        window.searchRooms = function() {
+            const dateVal = document.getElementById('search-date').value;
+            const time = document.getElementById('search-time').value;
+            const level = document.getElementById('search-level').value;
+            const students = parseInt(document.getElementById('search-students').value);
+
+            if(!dateVal) return alert("Selecciona una fecha");
+
+            const dateObj = new Date(dateVal);
+            const dayOfWeek = dateObj.getDay(); // 1=Lunes.. 5=Viernes
+
+            if(dayOfWeek === 0 || dayOfWeek === 6) return alert("No se puede reservar en fin de semana.");
+            
+            if(systemConfig.holidays.some(h => h.date === dateVal)) {
+                const motivo = systemConfig.holidays.find(h => h.date === dateVal).name;
+                return alert(`El ${dateVal} es festivo o no lectivo (${motivo}).`);
+            }
+
+            const resultsDiv = document.getElementById('search-results');
+            resultsDiv.innerHTML = '';
+
+            // Filtrar reservas que ocupan esta hora
+            const occupiedIds = allReservations.filter(res => {
+                if(res.time !== time) return false;
+                if(res.type === 'trimestre' && res.dayOfWeek === dayOfWeek) return true;
+                if(res.type === 'puntual' && res.date === dateVal) return true;
+                return false;
+            }).map(res => res.roomId);
+
+            const availableRooms = systemConfig.rooms.filter(r => !occupiedIds.includes(r.id));
+
+            if(availableRooms.length === 0) {
+                resultsDiv.innerHTML = `<div class="col-span-full p-4 bg-red-100 text-red-700 rounded-md">No hay ninguna sala libre en esta fecha y hora.</div>`;
                 return;
             }
 
-            closeBookingModal();
-
-            const room = rooms.find(r => r.id === roomId);
-            let successMsg = `El aula ${room.name} ha sido reservada correctamente a ${hour}ª hora.`;
-            if (room.mobile) {
-                successMsg += `\n\nRECUERDA: Avisa a las conserjes para que acerquen el carro.`;
-            }
-
-            showCustomAlert("¡Reserva confirmada!", successMsg, "success");
-            // No hace falta llamar a renderSchedule porque onSnapshot lo actualizará solo
-        }
-
-        window.renderSchedule = function() {
-            const scheduleSelect = document.getElementById('schedule-room-select');
-            if(!scheduleSelect) return;
-            const roomId = scheduleSelect.value;
-            const tbody = document.getElementById('schedule-tbody');
-            if(!tbody) return;
-            
-            tbody.innerHTML = '';
-            const days = [1, 2, 3, 4, 5];
-            const hours = [1, 2, 3, 4, 5, 6];
-
-            hours.forEach(h => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-blue-50/50 transition-colors";
-                
-                const tdHour = document.createElement('td');
-                tdHour.className = "border p-3 text-center font-bold text-gray-700 bg-gray-50/50";
-                tdHour.innerText = `${h}ª`;
-                tr.appendChild(tdHour);
-
-                days.forEach(d => {
-                    const td = document.createElement('td');
-                    td.className = "border p-3 align-top min-w-[140px]";
-                    
-                    const slotBookings = allBookings.filter(b => b.room_id === roomId && b.hour === h && b.dayOfWeek === d);
-                    
-                    if (slotBookings.length > 0) {
-                        slotBookings.forEach(book => {
-                            const isPuntual = book.type === 'puntual';
-                            const badgeColor = isPuntual ? 'bg-orange-100 text-orange-800 border-orange-200' : 'bg-green-100 text-green-800 border-green-200';
-                            const label = isPuntual ? `Puntual (${book.specificDate})` : 'Fija';
-                            
-                            // Determinamos qué ID pasarle a la papelera (el de Firebase si lo tiene)
-                            const isFirebase = !!book._firebaseId;
-                            const deleteId = isFirebase ? book._firebaseId : book.id;
-                            
-                            const div = document.createElement('div');
-                            div.className = `p-2 mb-2 rounded-md border text-xs ${badgeColor} shadow-sm relative group`;
-                            div.innerHTML = `
-                                <div class="flex justify-between items-start">
-                                    <div class="font-bold text-sm mb-1 truncate pr-6">${book.teacher}</div>
-                                    <button onclick="openPasswordModal('${deleteId}', ${isFirebase})" class="text-red-500 hover:text-red-700 bg-white/90 p-1 rounded transition-colors absolute top-1 right-1 shadow-sm" title="Borrar reserva">
-                                        <i class="ph ph-trash text-base"></i>
-                                    </button>
-                                </div>
-                                <div class="truncate opacity-90">${book.subject}</div>
-                                <div class="truncate opacity-80 mt-1">${book.course}</div>
-                                <div class="mt-1 text-[10px] uppercase font-bold tracking-wide">${label}</div>
-                            `;
-                            td.appendChild(div);
-                        });
-                    } else {
-                        td.innerHTML = `<div class="text-center text-gray-300 text-xs h-full flex flex-col justify-center py-4">Libre</div>`;
-                    }
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
+            // Ordenar: Favorecer el mismo edificio
+            availableRooms.sort((a, b) => {
+                if(a.location === level && b.location !== level) return -1;
+                if(b.location === level && a.location !== level) return 1;
+                return 0;
             });
-        }
 
-        window.openPasswordModal = function(bookingId, isFirebase) {
-            document.getElementById('delete-booking-id').value = bookingId;
-            document.getElementById('delete-is-firebase').value = isFirebase;
-            document.getElementById('delete-password').value = '';
-            document.getElementById('password-modal').classList.remove('hidden');
-        }
-        
-        window.closePasswordModal = function() {
-            document.getElementById('password-modal').classList.add('hidden');
-        }
-        
-        window.confirmDelete = async function() {
-            const pass = document.getElementById('delete-password').value;
-            if (pass === '240627') {
-                const bookingId = document.getElementById('delete-booking-id').value;
-                const isFirebase = document.getElementById('delete-is-firebase').value === 'true';
-                
-                if (isFirebase) {
-                    try {
-                        await deleteDoc(doc(db, "reservas", bookingId));
-                        showCustomAlert("Reserva borrada", "La reserva se ha eliminado de la base de datos.", "success");
-                    } catch (e) {
-                        showCustomAlert("Error", "No se pudo borrar.", "error");
-                    }
-                } else {
-                    // Si es de las fijas del código, se oculta temporalmente
-                    defaultBookings = defaultBookings.filter(b => b.id !== bookingId);
-                    allBookings = [...defaultBookings, ...firebaseBookings];
-                    showCustomAlert("Reserva borrada", "Reserva fija eliminada temporalmente. Para quitarla del todo, modifícala en el código base.", "success");
-                    renderSchedule();
-                    if (!document.getElementById('tab-reservar').classList.contains('hidden')) {
-                        searchRooms();
-                    }
+            availableRooms.forEach(room => {
+                let warningHTML = '';
+                if(room.type !== 'especial' && room.capacity < students) {
+                    warningHTML = `<p class="text-xs text-orange-600 font-bold mb-2">⚠️ Aforo ajustado (${room.capacity} equipos vs ${students} alu)</p>`;
                 }
                 
-                closePasswordModal();
-            } else {
-                showCustomAlert("Error", "La clave introducida es incorrecta.", "error");
-                document.getElementById('delete-password').value = '';
+                let conserjeHTML = room.reqConserje ? `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded ml-2">Avisar Conserje</span>` : '';
+
+                resultsDiv.innerHTML += `
+                    <div class="bg-white border rounded-lg shadow-sm p-4 hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-lg">${room.name}</h4>
+                            ${conserjeHTML}
+                        </div>
+                        <p class="text-sm text-gray-500 mb-2"><i class="fas fa-building mr-1"></i>${room.location} | <i class="fas fa-desktop mr-1"></i>${room.type === 'especial' ? 'Aula Especial' : room.capacity + ' equipos'}</p>
+                        ${warningHTML}
+                        <button onclick="openReserveModal('${room.id}', '${dateVal}', '${time}', ${dayOfWeek})" class="mt-2 w-full bg-green-50 text-green-700 border border-green-300 font-bold py-1.5 rounded hover:bg-green-100 transition">Seleccionar</button>
+                    </div>
+                `;
+            });
+        };
+
+        // --- SISTEMA DE RESERVAS ---
+        window.openReserveModal = function(roomId, date, time, dayOfWeek) {
+            const room = systemConfig.rooms.find(r => r.id === roomId);
+            pendingReservation = { roomId, date, time, dayOfWeek, roomName: room.name };
+            
+            document.getElementById('modal-title').textContent = `Reservar ${room.name} (Hora ${time})`;
+            document.getElementById('modal-warning').style.display = room.reqConserje ? 'block' : 'none';
+            document.getElementById('reserve-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('reserve-modal').classList.add('hidden');
+            pendingReservation = null;
+        };
+
+        window.confirmReservation = async function() {
+            if(!pendingReservation) return;
+            const name = document.getElementById('res-name').value;
+            const course = document.getElementById('res-course').value;
+            const subject = document.getElementById('res-subject').value;
+            const type = document.getElementById('res-type').value;
+
+            if(!name || !course || !subject) return alert("Rellena todos los campos");
+
+            const resData = {
+                roomId: pendingReservation.roomId,
+                date: pendingReservation.date,
+                time: pendingReservation.time,
+                dayOfWeek: pendingReservation.dayOfWeek,
+                name, course, subject, type,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                await addDoc(collection(db, "reservas"), resData);
+                closeModal();
+                alert(`¡Reserva confirmada con éxito para el aula ${pendingReservation.roomName}!`);
+                document.getElementById('res-name').value = '';
+                document.getElementById('res-course').value = '';
+                document.getElementById('res-subject').value = '';
+                searchRooms(); // Refrescar resultados
+            } catch(e) {
+                alert("Error guardando la reserva.");
             }
+        };
+
+        // --- HORARIOS VISUALES ---
+        window.renderSchedule = function() {
+            const roomId = document.getElementById('schedule-room').value;
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+            
+            if(!roomId) return;
+
+            const roomRes = allReservations.filter(r => r.roomId === roomId);
+            const days = [1, 2, 3, 4, 5]; // L a V
+
+            for(let hour = 1; hour <= 6; hour++) {
+                let tr = `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r bg-gray-50">${hour}ª Hora</td>`;
+                
+                days.forEach(day => {
+                    const res = roomRes.find(r => r.time == hour && (r.type === 'trimestre' ? r.dayOfWeek == day : new Date(r.date).getDay() == day));
+                    
+                    if(res) {
+                        const bg = res.type === 'trimestre' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200';
+                        tr += `<td class="px-2 py-2 border relative group">
+                                <div class="${bg} border rounded p-2 text-xs h-full">
+                                    <div class="font-bold text-gray-800">${res.name}</div>
+                                    <div class="text-gray-600">${res.course}</div>
+                                    <div class="text-gray-500 italic truncate">${res.subject}</div>
+                                    ${res.type === 'puntual' ? `<div class="text-[10px] mt-1 text-green-700 font-bold">Día: ${res.date}</div>` : ''}
+                                    <button onclick="deleteReservation('${res.id}')" class="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition"><i class="fas fa-trash"></i></button>
+                                </div>
+                               </td>`;
+                    } else {
+                        tr += `<td class="px-2 py-2 border text-center text-gray-300 text-xs">-</td>`;
+                    }
+                });
+                tr += '</tr>';
+                tbody.innerHTML += tr;
+            }
+        };
+
+        window.deleteReservation = async function(resId) {
+            const pin = prompt("Introduce la clave del Coordinador TIC para anular esta reserva:");
+            if(pin !== systemConfig.adminPin) {
+                if(pin !== null) alert("Clave incorrecta.");
+                return;
+            }
+            if(confirm("¿Seguro que quieres borrar esta reserva?")) {
+                await deleteDoc(doc(db, "reservas", resId));
+            }
+        };
+
+        // --- ADMINISTRACIÓN (Config y Base de datos) ---
+        window.promptAdmin = function() {
+            const pin = prompt("Introduce el PIN de administración:");
+            if(pin === systemConfig.adminPin) {
+                switchTab('admin');
+                document.getElementById('btn-admin').classList.remove('hidden');
+            } else if (pin !== null) {
+                alert("PIN Incorrecto.");
+            }
+        };
+
+        window.saveGeneralConfig = async function() {
+            systemConfig.schoolName = document.getElementById('admin-school-name').value;
+            systemConfig.adminPin = document.getElementById('admin-pin').value;
+            systemConfig.startDate = document.getElementById('admin-start-date').value;
+            systemConfig.endDate = document.getElementById('admin-end-date').value;
+            await syncConfig();
+            alert("Configuración General guardada.");
+            updateUIWithConfig();
+        };
+
+        // Festivos
+        window.renderAdminHolidays = function() {
+            const ul = document.getElementById('admin-holidays-list');
+            ul.innerHTML = '';
+            systemConfig.holidays.sort((a,b) => a.date.localeCompare(b.date)).forEach((h, index) => {
+                ul.innerHTML += `<li class="py-2 flex justify-between items-center text-sm">
+                    <span><b>${h.date}</b> - ${h.name}</span>
+                    <button onclick="removeHoliday(${index})" class="text-red-500 hover:text-red-700"><i class="fas fa-times"></i></button>
+                </li>`;
+            });
+        };
+
+        window.addHoliday = async function() {
+            const date = document.getElementById('new-holiday-date').value;
+            const name = document.getElementById('new-holiday-name').value;
+            if(!date || !name) return alert("Rellena fecha y motivo");
+            systemConfig.holidays.push({date, name});
+            await syncConfig();
+            renderAdminHolidays();
+            document.getElementById('new-holiday-date').value = '';
+            document.getElementById('new-holiday-name').value = '';
+        };
+
+        window.removeHoliday = async function(index) {
+            systemConfig.holidays.splice(index, 1);
+            await syncConfig();
+            renderAdminHolidays();
+        };
+
+        // Aulas
+        window.renderAdminRooms = function() {
+            const tbody = document.getElementById('admin-rooms-list');
+            tbody.innerHTML = '';
+            systemConfig.rooms.forEach((r, index) => {
+                tbody.innerHTML += `<tr>
+                    <td class="py-2 font-medium">${r.name}</td>
+                    <td>${r.location}</td>
+                    <td>${r.type==='especial' ? '-' : r.capacity}</td>
+                    <td><span class="text-xs bg-gray-200 px-2 py-1 rounded uppercase">${r.type}</span></td>
+                    <td>${r.reqConserje ? 'Sí' : 'No'}</td>
+                    <td><button onclick="removeRoom(${index})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            });
+        };
+
+        window.addRoom = async function() {
+            const name = document.getElementById('new-room-name').value;
+            const location = document.getElementById('new-room-location').value;
+            const capacity = parseInt(document.getElementById('new-room-capacity').value) || 0;
+            const type = document.getElementById('new-room-type').value;
+            if(!name) return;
+
+            systemConfig.rooms.push({
+                id: 'r' + Date.now(),
+                name, location, capacity, type,
+                reqConserje: (type === 'movil')
+            });
+            await syncConfig();
+            renderAdminRooms();
+            updateUIWithConfig(); // actualiza selectores
+        };
+
+        window.removeRoom = async function(index) {
+            if(confirm("¿Seguro que quieres borrar este recurso?")) {
+                systemConfig.rooms.splice(index, 1);
+                await syncConfig();
+                renderAdminRooms();
+                updateUIWithConfig();
+            }
+        };
+
+        // Sincronizar Config a Firebase
+        async function syncConfig() {
+            await setDoc(doc(db, "configuracion", "general"), systemConfig);
         }
 
-        // Inicializamos
-        window.onload = function() {
-            initApp();
-            renderSchedule();
-        }
+        // --- ZONA DE PELIGRO ---
+        window.deleteAllReservations = async function() {
+            const conf1 = confirm("⚠️ ATENCIÓN: Vas a borrar absolutamente todas las reservas del sistema. ¿Estás seguro?");
+            if(!conf1) return;
+            const pin = prompt("Escribe el PIN de administrador para confirmar el borrado masivo:");
+            if(pin !== systemConfig.adminPin) return alert("PIN Incorrecto. Operación cancelada.");
+            
+            try {
+                // Borrar doc a doc
+                const querySnapshot = await getDocs(collection(db, "reservas"));
+                querySnapshot.forEach(async (documento) => {
+                    await deleteDoc(doc(db, "reservas", documento.id));
+                });
+                alert("✅ Se han limpiado todas las reservas. El sistema está listo para un nuevo curso.");
+                renderSchedule();
+            } catch(e) {
+                alert("Hubo un error al borrar las reservas.");
+            }
+        };
+
+        window.exportToCSV = function() {
+            if(allReservations.length === 0) return alert("No hay reservas para exportar.");
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Fecha/Dia,Hora,Aula,Profesor,Curso,Materia,Tipo\n";
+            
+            allReservations.forEach(r => {
+                const aulaName = systemConfig.rooms.find(rm => rm.id === r.roomId)?.name || 'Desconocida';
+                const dia = r.type === 'trimestre' ? `DiaSemana_${r.dayOfWeek}` : r.date;
+                csvContent += `${dia},${r.time},${aulaName},${r.name},${r.course},${r.subject},${r.type}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "reservas_aulas.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // --- NAVEGACIÓN ---
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'text-blue-600'));
+            
+            document.getElementById('tab-' + tabId).classList.add('active');
+            const btn = document.getElementById('btn-' + tabId);
+            if(btn) {
+                btn.classList.add('active');
+                btn.classList.remove('text-gray-500');
+            }
+        };
+
+        // INICIAR APLICACIÓN
+        initData();
     </script>
 </body>
 </html>
