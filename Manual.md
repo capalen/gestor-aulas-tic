@@ -1,4 +1,4 @@
----
+***
 
 # Manual: Implantación y Uso del Gestor de Aulas TIC
 
@@ -15,7 +15,7 @@ Antes de empezar, aquí tienes todo lo que este sistema puede hacer por tu centr
 * **Reutilización Anual:** Incorpora un botón de "Formateo" en el panel de administración que permite borrar absolutamente todas las reservas con un solo clic en septiembre, dejando el sistema limpio para un nuevo curso.
 * **Exportación de Registros (CSV):** Incluye una herramienta para descargar todo el histórico de reservas a un archivo Excel. Perfecto para justificar el uso de los equipos ante Dirección, Inspección o para la certificación del plan CoDiCe TIC.
 
----
+***
 
 ## 🛠️ FASE 1: Crear la Base de Datos gratuita (Firebase)
 
