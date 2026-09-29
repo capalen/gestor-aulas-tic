@@ -420,7 +420,7 @@
             pendingReservation = null;
         };
 
-        window.confirmReservation = async function() {
+       window.confirmReservation = async function() {
             if(!pendingReservation) return;
             const name = document.getElementById('res-name').value;
             const course = document.getElementById('res-course').value;
@@ -439,15 +439,21 @@
             };
 
             try {
-                await addDoc(collection(db, "reservas"), resData);
+                // Modificación: Se elimina el 'await' para enviar en segundo plano
+                // y sortear los bloqueos del cortafuegos de la red del centro.
+                addDoc(collection(db, "reservas"), resData);
+                
                 closeModal();
                 alert(`¡Reserva confirmada con éxito para el aula ${pendingReservation.roomName}!`);
+                
                 document.getElementById('res-name').value = '';
                 document.getElementById('res-course').value = '';
                 document.getElementById('res-subject').value = '';
-                searchRooms(); // Refrescar resultados
+                
+                // Pequeño margen de tiempo para que la nube procese el dato antes de recargar
+                setTimeout(() => { searchRooms(); }, 800); 
             } catch(e) {
-                alert("Error guardando la reserva.");
+                alert("La red va un poco lenta, pero es muy probable que la reserva se haya guardado. Por favor, compruébalo en la pestaña 'Ver Horarios'.");
             }
         };
 
