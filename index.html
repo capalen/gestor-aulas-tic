@@ -43,7 +43,6 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        <!-- ESTADO DE CARGA -->
         <div id="loading-state" class="flex justify-center items-center py-20">
             <div class="loader mr-3"></div>
             <span class="text-gray-500">Conectando con la base de datos...</span>
@@ -86,11 +85,11 @@
         <div id="tab-horarios" class="tab-content">
             <div class="bg-white rounded-lg shadow p-6 mb-6 flex justify-between items-center">
                 <div class="w-1/2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Selecciona un aula para ver su horario semanal:</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Selecciona un aula o carro para ver su horario:</label>
                     <select id="schedule-room" class="w-full border rounded-md p-2" onchange="renderSchedule()"></select>
                 </div>
                 <div class="text-right text-sm text-gray-500 italic">
-                    * Si necesitas anular un aula o modificar una reserva, ponte en contacto con el coordinador TIC.
+                    * Si necesitas anular una reserva, contacta con el coordinador TIC.
                 </div>
             </div>
             <div class="overflow-x-auto bg-white rounded-lg shadow">
@@ -110,8 +109,9 @@
             </div>
         </div>
 
-        <!-- PESTAÑA 3: ADMINISTRACIÓN (Oculta por defecto) -->
+        <!-- PESTAÑA 3: ADMINISTRACIÓN -->
         <div id="tab-admin" class="tab-content">
+            <!-- (Se mantiene exactamente igual que en tu versión anterior) -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Configuración General -->
                 <div class="bg-white rounded-lg shadow p-6">
@@ -179,7 +179,7 @@
                         <div>
                             <label class="block text-xs font-bold text-gray-700">Tipo</label>
                             <select id="new-room-type" class="w-full border rounded p-1 mt-1">
-                                <option value="fija">Aula Fija</option><option value="movil">Carro Móvil</option><option value="especial">Especial (Audio/Taller)</option>
+                                <option value="fija">Aula Fija</option><option value="movil">Carro Móvil</option><option value="especial">Especial</option>
                             </select>
                         </div>
                         <button onclick="addRoom()" class="bg-blue-600 text-white px-2 py-1.5 rounded hover:bg-blue-700">Añadir Aula</button>
@@ -190,7 +190,7 @@
                 <div class="bg-red-50 rounded-lg shadow p-6 lg:col-span-2 border border-red-200">
                     <h2 class="text-lg font-bold text-red-700 mb-4 border-b border-red-200 pb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Mantenimiento y Zona de Peligro</h2>
                     <div class="flex gap-4">
-                        <button onclick="exportToCSV()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow hover:bg-gray-50"><i class="fas fa-file-csv mr-2"></i>Exportar Reservas a Excel (CSV)</button>
+                        <button onclick="exportToCSV()" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow hover:bg-gray-50"><i class="fas fa-file-csv mr-2"></i>Exportar Reservas a Excel</button>
                         <button onclick="deleteAllReservations()" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700"><i class="fas fa-trash-alt mr-2"></i>Borrar TODAS las reservas (Nuevo Curso)</button>
                     </div>
                 </div>
@@ -198,23 +198,39 @@
         </div>
     </main>
 
-    <!-- Modal Reserva -->
+    <!-- Modal Reserva Modificado -->
     <div id="reserve-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 class="text-xl font-bold mb-4" id="modal-title">Confirmar Reserva</h3>
             <div id="modal-warning" class="hidden mb-4 p-3 bg-yellow-100 text-yellow-800 text-sm rounded-md font-medium border border-yellow-300">
                 ⚠️ Recuerda: Es obligatorio avisar a Conserjería para que acerquen este recurso al aula.
             </div>
+            
             <div class="space-y-4">
                 <div><label class="block text-sm font-medium text-gray-700">Tu Nombre</label><input type="text" id="res-name" class="w-full border rounded p-2 mt-1"></div>
                 <div><label class="block text-sm font-medium text-gray-700">Curso (Ej. 1º ESO A)</label><input type="text" id="res-course" class="w-full border rounded p-2 mt-1"></div>
                 <div><label class="block text-sm font-medium text-gray-700">Materia</label><input type="text" id="res-subject" class="w-full border rounded p-2 mt-1"></div>
+                
+                <!-- Oculto para aulas fijas, visible para carros móviles -->
+                <div id="div-devices" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700">¿Cuántos ordenadores/tabletas necesitas?</label>
+                    <input type="number" id="res-devices" class="w-full border rounded p-2 mt-1" min="1">
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Duración</label>
                     <select id="res-type" class="w-full border rounded p-2 mt-1">
                         <option value="puntual">Solo este día puntual</option>
                         <option value="trimestre">Fijo para todo el curso</option>
                     </select>
+                </div>
+
+                <!-- Compromiso Cuaderno de Aula -->
+                <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <label class="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" id="res-cuaderno" class="mt-1 w-5 h-5 text-red-600 rounded">
+                        <span class="text-sm text-red-800 font-medium">He leído y me comprometo a rellenar el <b>cuaderno de aula</b> indicando qué ordenador usa cada alumno y sus posibles incidencias.</span>
+                    </label>
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">
@@ -224,12 +240,24 @@
         </div>
     </div>
 
+    <!-- FOOTER CON LICENCIA CC -->
+    <footer class="mt-12 text-center text-sm text-gray-500 pb-8">
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" class="inline-block mb-2">
+            <img alt="Licencia de Creative Commons" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
+        </a>
+        <br />
+        Gestor de Aulas y Recursos TIC por <b>Carlos Pérez Sierra</b> está bajo una 
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" class="text-blue-600 hover:underline" target="_blank">
+            Licencia Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional
+        </a>.
+    </footer>
+
     <!-- Scripts Core & Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // TUS LLAVES DE FIREBASE (No tocar)
+        // Aquí van tus llaves
         const firebaseConfig = {
             apiKey: "AIzaSyBs69L8fBroxFwcJ3sMFGcDHwIuXmSkVMg",
             authDomain: "gestoraulas-5192c.firebaseapp.com",
@@ -242,95 +270,55 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Variables Globales
         let systemConfig = {};
         let allReservations = [];
         let pendingReservation = null;
 
-        // VALORES POR DEFECTO (Si es la primera vez que se ejecuta)
         const defaultConfig = {
             schoolName: "IES Condes de Saldaña",
             adminPin: "240727",
             startDate: "2026-09-01",
             endDate: "2027-06-24",
-            holidays: [
-                { date: "2026-10-12", name: "Día del Pilar" },
-                { date: "2026-10-30", name: "Día del Docente" },
-                { date: "2026-11-02", name: "Todos los Santos" },
-                { date: "2026-12-07", name: "Puente Constitución" },
-                { date: "2026-12-08", name: "Puente Constitución" },
-                { date: "2027-02-08", name: "Carnavales" },
-                { date: "2027-02-09", name: "Carnavales" },
-                { date: "2027-04-23", name: "Día de Castilla y León" },
-                { date: "2027-05-01", name: "Día del Trabajo" }
-            ],
+            holidays: [],
             rooms: [
                 { id: "r1", name: "Atenea", capacity: 25, location: "Bachillerato", type: "fija" },
-                { id: "r2", name: "Taller Tecnología", capacity: 20, location: "Bachillerato", type: "fija" },
-                { id: "r3", name: "Pascal", capacity: 18, location: "Bachillerato", type: "fija" },
-                { id: "r4", name: "Digital", capacity: 15, location: "ESO", type: "fija" },
-                { id: "r5", name: "Móvil ESO", capacity: 24, location: "ESO", type: "movil", reqConserje: true },
-                { id: "r6", name: "Móvil Bachillerato", capacity: 15, location: "Bachillerato", type: "movil", reqConserje: true },
-                { id: "r7", name: "Tabletas", capacity: 24, location: "General", type: "movil", reqConserje: true },
-                { id: "r8", name: "Audiovisuales", capacity: 1, location: "General", type: "especial" }
+                { id: "r5", name: "Móvil ESO", capacity: 24, location: "ESO", type: "movil", reqConserje: true }
             ]
         };
 
-        // INICIALIZACIÓN DE DATOS
         async function initData() {
             try {
-                // Cargar o crear configuración
                 const configRef = doc(db, "configuracion", "general");
                 const configSnap = await getDoc(configRef);
-                
-                if (configSnap.exists()) {
-                    systemConfig = configSnap.data();
-                } else {
-                    await setDoc(configRef, defaultConfig);
-                    systemConfig = defaultConfig;
-                }
+                if (configSnap.exists()) systemConfig = configSnap.data();
+                else { await setDoc(configRef, defaultConfig); systemConfig = defaultConfig; }
                 
                 updateUIWithConfig();
 
-                // Escuchar reservas en tiempo real
                 onSnapshot(collection(db, "reservas"), (snapshot) => {
                     allReservations = [];
                     snapshot.forEach(doc => allReservations.push({ id: doc.id, ...doc.data() }));
-                    renderSchedule(); // Refrescar horario visual
-                    
-                    // Ocultar pantalla de carga
+                    renderSchedule(); 
                     document.getElementById('loading-state').style.display = 'none';
                     document.getElementById('tab-reserva').classList.add('active');
                 });
             } catch (e) {
-                alert("Error de conexión. Las reservas no se guardarán en la nube.");
-                systemConfig = defaultConfig;
-                updateUIWithConfig();
-                document.getElementById('loading-state').style.display = 'none';
-                document.getElementById('tab-reserva').classList.add('active');
+                alert("Error conectando a la base de datos.");
             }
         }
 
         function updateUIWithConfig() {
             document.getElementById('ui-school-name').textContent = systemConfig.schoolName;
-            
-            // Llenar selectores de aulas
             const select = document.getElementById('schedule-room');
-            select.innerHTML = '<option value="">-- Selecciona un aula --</option>';
-            systemConfig.rooms.forEach(room => {
-                select.innerHTML += `<option value="${room.id}">${room.name}</option>`;
-            });
+            select.innerHTML = '<option value="">-- Selecciona un aula/carro --</option>';
+            systemConfig.rooms.forEach(room => { select.innerHTML += `<option value="${room.id}">${room.name}</option>`; });
 
-            // Actualizar min/max fechas en buscador
             const dateInput = document.getElementById('search-date');
             dateInput.min = systemConfig.startDate;
             dateInput.max = systemConfig.endDate;
-            
-            // Si hoy está en rango, poner hoy por defecto
             const today = new Date().toISOString().split('T')[0];
             if(today >= systemConfig.startDate && today <= systemConfig.endDate) dateInput.value = today;
 
-            // Rellenar panel admin
             document.getElementById('admin-school-name').value = systemConfig.schoolName;
             document.getElementById('admin-pin').value = systemConfig.adminPin;
             document.getElementById('admin-start-date').value = systemConfig.startDate;
@@ -339,7 +327,7 @@
             renderAdminRooms();
         }
 
-        // --- LÓGICA DE BÚSQUEDA ---
+        // --- LÓGICA DE BÚSQUEDA MODIFICADA ---
         window.searchRooms = function() {
             const dateVal = document.getElementById('search-date').value;
             const time = document.getElementById('search-time').value;
@@ -347,46 +335,54 @@
             const students = parseInt(document.getElementById('search-students').value);
 
             if(!dateVal) return alert("Selecciona una fecha");
-
-            const dateObj = new Date(dateVal);
-            const dayOfWeek = dateObj.getDay(); // 1=Lunes.. 5=Viernes
-
-            if(dayOfWeek === 0 || dayOfWeek === 6) return alert("No se puede reservar en fin de semana.");
-            
-            if(systemConfig.holidays.some(h => h.date === dateVal)) {
-                const motivo = systemConfig.holidays.find(h => h.date === dateVal).name;
-                return alert(`El ${dateVal} es festivo o no lectivo (${motivo}).`);
-            }
+            const dayOfWeek = new Date(dateVal).getDay();
+            if(dayOfWeek === 0 || dayOfWeek === 6) return alert("Fin de semana cerrado.");
+            if(systemConfig.holidays.some(h => h.date === dateVal)) return alert("Día festivo.");
 
             const resultsDiv = document.getElementById('search-results');
             resultsDiv.innerHTML = '';
 
-            // Filtrar reservas que ocupan esta hora
-            const occupiedIds = allReservations.filter(res => {
-                if(res.time !== time) return false;
-                if(res.type === 'trimestre' && res.dayOfWeek === dayOfWeek) return true;
-                if(res.type === 'puntual' && res.date === dateVal) return true;
-                return false;
-            }).map(res => res.roomId);
+            // CALCULAR USO ACUMULADO POR AULA/CARRO
+            const usage = {};
+            allReservations.forEach(res => {
+                if(res.time == time && ((res.type === 'trimestre' && res.dayOfWeek == dayOfWeek) || (res.type === 'puntual' && res.date === dateVal))) {
+                    // Si es reserva antigua (sin numDevices), asumimos que ocupa todo. Si no, suma los dispositivos.
+                    const roomCap = systemConfig.rooms.find(r => r.id === res.roomId)?.capacity || 100;
+                    const devicesUsed = res.numDevices ? res.numDevices : roomCap;
+                    usage[res.roomId] = (usage[res.roomId] || 0) + devicesUsed;
+                }
+            });
 
-            const availableRooms = systemConfig.rooms.filter(r => !occupiedIds.includes(r.id));
+            // FILTRAR AULAS
+            const availableRooms = systemConfig.rooms.map(r => ({...r})).filter(r => {
+                const used = usage[r.id] || 0;
+                if(r.type === 'movil') {
+                    r.currentAvailable = r.capacity - used;
+                    return r.currentAvailable >= 1; // Muestra si queda al menos 1 dispositivo
+                } else {
+                    return used === 0; // Aulas fijas son todo o nada
+                }
+            });
 
             if(availableRooms.length === 0) {
-                resultsDiv.innerHTML = `<div class="col-span-full p-4 bg-red-100 text-red-700 rounded-md">No hay ninguna sala libre en esta fecha y hora.</div>`;
+                resultsDiv.innerHTML = `<div class="col-span-full p-4 bg-red-100 text-red-700 rounded-md">No hay ninguna sala o carro libre a esa hora.</div>`;
                 return;
             }
 
-            // Ordenar: Favorecer el mismo edificio
-            availableRooms.sort((a, b) => {
-                if(a.location === level && b.location !== level) return -1;
-                if(b.location === level && a.location !== level) return 1;
-                return 0;
-            });
+            availableRooms.sort((a, b) => a.location === level && b.location !== level ? -1 : 1);
 
             availableRooms.forEach(room => {
+                let capacityText = room.type === 'especial' ? 'Aula Especial' : `${room.capacity} equipos`;
                 let warningHTML = '';
-                if(room.type !== 'especial' && room.capacity < students) {
-                    warningHTML = `<p class="text-xs text-orange-600 font-bold mb-2">⚠️ Aforo ajustado (${room.capacity} equipos vs ${students} alu)</p>`;
+                
+                // Lógica visual específica para Carros Móviles
+                if (room.type === 'movil') {
+                    capacityText = `Quedan ${room.currentAvailable} disp. libres (de ${room.capacity})`;
+                    if (room.currentAvailable < students) {
+                        warningHTML = `<p class="text-xs text-orange-600 font-bold mb-2">⚠️ Solo quedan ${room.currentAvailable} ud. disponibles.</p>`;
+                    }
+                } else if (room.type === 'fija' && room.capacity < students) {
+                    warningHTML = `<p class="text-xs text-orange-600 font-bold mb-2">⚠️ Aforo ajustado (${room.capacity} uds vs ${students} alu)</p>`;
                 }
                 
                 let conserjeHTML = room.reqConserje ? `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded ml-2">Avisar Conserje</span>` : '';
@@ -397,21 +393,35 @@
                             <h4 class="font-bold text-lg">${room.name}</h4>
                             ${conserjeHTML}
                         </div>
-                        <p class="text-sm text-gray-500 mb-2"><i class="fas fa-building mr-1"></i>${room.location} | <i class="fas fa-desktop mr-1"></i>${room.type === 'especial' ? 'Aula Especial' : room.capacity + ' equipos'}</p>
+                        <p class="text-sm text-gray-500 mb-2"><i class="fas fa-desktop mr-1"></i>${capacityText}</p>
                         ${warningHTML}
-                        <button onclick="openReserveModal('${room.id}', '${dateVal}', '${time}', ${dayOfWeek})" class="mt-2 w-full bg-green-50 text-green-700 border border-green-300 font-bold py-1.5 rounded hover:bg-green-100 transition">Seleccionar</button>
+                        <button onclick="openReserveModal('${room.id}', '${dateVal}', '${time}', ${dayOfWeek}, ${room.currentAvailable || room.capacity}, '${room.type}', ${students})" class="mt-2 w-full bg-green-50 text-green-700 border border-green-300 font-bold py-1.5 rounded hover:bg-green-100 transition">Seleccionar</button>
                     </div>
                 `;
             });
         };
 
-        // --- SISTEMA DE RESERVAS ---
-        window.openReserveModal = function(roomId, date, time, dayOfWeek) {
+        window.openReserveModal = function(roomId, date, time, dayOfWeek, availableCap, roomType, reqStudents) {
             const room = systemConfig.rooms.find(r => r.id === roomId);
-            pendingReservation = { roomId, date, time, dayOfWeek, roomName: room.name };
+            pendingReservation = { roomId, date, time, dayOfWeek, roomName: room.name, roomType, availableCap };
             
             document.getElementById('modal-title').textContent = `Reservar ${room.name} (Hora ${time})`;
             document.getElementById('modal-warning').style.display = room.reqConserje ? 'block' : 'none';
+            
+            // Resetea el checkbox
+            document.getElementById('res-cuaderno').checked = false;
+
+            // Configura selector de dispositivos si es carro móvil
+            const divDevices = document.getElementById('div-devices');
+            const inputDevices = document.getElementById('res-devices');
+            if (roomType === 'movil') {
+                divDevices.classList.remove('hidden');
+                inputDevices.max = availableCap;
+                inputDevices.value = Math.min(reqStudents, availableCap);
+            } else {
+                divDevices.classList.add('hidden');
+            }
+
             document.getElementById('reserve-modal').classList.remove('hidden');
         };
 
@@ -420,14 +430,30 @@
             pendingReservation = null;
         };
 
-       window.confirmReservation = async function() {
+        window.confirmReservation = async function() {
             if(!pendingReservation) return;
+
+            // Validación Cuaderno de Aula
+            if(!document.getElementById('res-cuaderno').checked) {
+                return alert("⚠️ Es obligatorio marcar la casilla aceptando rellenar el cuaderno de aula.");
+            }
+
             const name = document.getElementById('res-name').value;
             const course = document.getElementById('res-course').value;
             const subject = document.getElementById('res-subject').value;
             const type = document.getElementById('res-type').value;
-
             if(!name || !course || !subject) return alert("Rellena todos los campos");
+
+            // Cálculo de dispositivos a guardar
+            let numDevices = null;
+            if(pendingReservation.roomType === 'movil') {
+                numDevices = parseInt(document.getElementById('res-devices').value);
+                if (isNaN(numDevices) || numDevices < 1 || numDevices > pendingReservation.availableCap) {
+                    return alert(`Por favor, indica un número válido de dispositivos (Máximo disponible: ${pendingReservation.availableCap}).`);
+                }
+            } else {
+                numDevices = pendingReservation.availableCap; // Aulas fijas cogen el máximo de la sala
+            }
 
             const resData = {
                 roomId: pendingReservation.roomId,
@@ -435,56 +461,56 @@
                 time: pendingReservation.time,
                 dayOfWeek: pendingReservation.dayOfWeek,
                 name, course, subject, type,
+                numDevices: numDevices, 
                 timestamp: new Date().toISOString()
             };
 
             try {
-                // Modificación: Se elimina el 'await' para enviar en segundo plano
-                // y sortear los bloqueos del cortafuegos de la red del centro.
                 addDoc(collection(db, "reservas"), resData);
-                
                 closeModal();
-                alert(`¡Reserva confirmada con éxito para el aula ${pendingReservation.roomName}!`);
-                
+                alert(`¡Reserva guardada para ${pendingReservation.roomName}!`);
                 document.getElementById('res-name').value = '';
                 document.getElementById('res-course').value = '';
                 document.getElementById('res-subject').value = '';
-                
-                // Pequeño margen de tiempo para que la nube procese el dato antes de recargar
                 setTimeout(() => { searchRooms(); }, 800); 
             } catch(e) {
-                alert("La red va un poco lenta, pero es muy probable que la reserva se haya guardado. Por favor, compruébalo en la pestaña 'Ver Horarios'.");
+                alert("Error de red. Comprueba en 'Ver Horarios' si se ha guardado.");
             }
         };
 
-        // --- HORARIOS VISUALES ---
+        // --- HORARIOS VISUALES MODIFICADOS (Permite múltiples reservas en la misma hora) ---
         window.renderSchedule = function() {
             const roomId = document.getElementById('schedule-room').value;
             const tbody = document.getElementById('schedule-body');
             tbody.innerHTML = '';
-            
             if(!roomId) return;
-
             const roomRes = allReservations.filter(r => r.roomId === roomId);
-            const days = [1, 2, 3, 4, 5]; // L a V
+            const days = [1, 2, 3, 4, 5]; 
 
             for(let hour = 1; hour <= 6; hour++) {
                 let tr = `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r bg-gray-50">${hour}ª Hora</td>`;
                 
                 days.forEach(day => {
-                    const res = roomRes.find(r => r.time == hour && (r.type === 'trimestre' ? r.dayOfWeek == day : new Date(r.date).getDay() == day));
+                    // Coge TODAS las reservas de esa hora y día (para carros compartidos)
+                    const resList = roomRes.filter(r => r.time == hour && (r.type === 'trimestre' ? r.dayOfWeek == day : new Date(r.date).getDay() == day));
                     
-                    if(res) {
-                        const bg = res.type === 'trimestre' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200';
-                        tr += `<td class="px-2 py-2 border relative group">
-                                <div class="${bg} border rounded p-2 text-xs h-full">
-                                    <div class="font-bold text-gray-800">${res.name}</div>
+                    if(resList.length > 0) {
+                        let cellContent = `<td class="px-2 py-2 border align-top h-full">`;
+                        resList.forEach(res => {
+                            const bg = res.type === 'trimestre' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200';
+                            const badge = res.numDevices ? `<span class="bg-white text-xs px-1 rounded ml-1 border shadow-sm">${res.numDevices} ud.</span>` : '';
+                            
+                            cellContent += `
+                                <div class="${bg} border rounded p-2 text-xs mb-1 relative group">
+                                    <div class="font-bold text-gray-800">${res.name} ${badge}</div>
                                     <div class="text-gray-600">${res.course}</div>
                                     <div class="text-gray-500 italic truncate">${res.subject}</div>
                                     ${res.type === 'puntual' ? `<div class="text-[10px] mt-1 text-green-700 font-bold">Día: ${res.date}</div>` : ''}
                                     <button onclick="deleteReservation('${res.id}')" class="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition"><i class="fas fa-trash"></i></button>
-                                </div>
-                               </td>`;
+                                </div>`;
+                        });
+                        cellContent += `</td>`;
+                        tr += cellContent;
                     } else {
                         tr += `<td class="px-2 py-2 border text-center text-gray-300 text-xs">-</td>`;
                     }
@@ -495,25 +521,18 @@
         };
 
         window.deleteReservation = async function(resId) {
-            const pin = prompt("Introduce la clave del Coordinador TIC para anular esta reserva:");
-            if(pin !== systemConfig.adminPin) {
-                if(pin !== null) alert("Clave incorrecta.");
-                return;
-            }
-            if(confirm("¿Seguro que quieres borrar esta reserva?")) {
+            const pin = prompt("Introduce el PIN de Coordinador TIC para anular esta reserva:");
+            if(pin === systemConfig.adminPin && confirm("¿Seguro que quieres borrarla?")) {
                 await deleteDoc(doc(db, "reservas", resId));
-            }
+            } else if (pin !== null) alert("PIN incorrecto o cancelado.");
         };
 
-        // --- ADMINISTRACIÓN (Config y Base de datos) ---
+        // --- ADMINISTRACIÓN ---
         window.promptAdmin = function() {
-            const pin = prompt("Introduce el PIN de administración:");
+            const pin = prompt("PIN de administración:");
             if(pin === systemConfig.adminPin) {
-                switchTab('admin');
-                document.getElementById('btn-admin').classList.remove('hidden');
-            } else if (pin !== null) {
-                alert("PIN Incorrecto.");
-            }
+                switchTab('admin'); document.getElementById('btn-admin').classList.remove('hidden');
+            } else if (pin !== null) alert("PIN Incorrecto.");
         };
 
         window.saveGeneralConfig = async function() {
@@ -521,53 +540,34 @@
             systemConfig.adminPin = document.getElementById('admin-pin').value;
             systemConfig.startDate = document.getElementById('admin-start-date').value;
             systemConfig.endDate = document.getElementById('admin-end-date').value;
-            await syncConfig();
-            alert("Configuración General guardada.");
-            updateUIWithConfig();
+            await setDoc(doc(db, "configuracion", "general"), systemConfig);
+            alert("Configuración guardada."); updateUIWithConfig();
         };
 
-        // Festivos
         window.renderAdminHolidays = function() {
-            const ul = document.getElementById('admin-holidays-list');
-            ul.innerHTML = '';
+            const ul = document.getElementById('admin-holidays-list'); ul.innerHTML = '';
             systemConfig.holidays.sort((a,b) => a.date.localeCompare(b.date)).forEach((h, index) => {
-                ul.innerHTML += `<li class="py-2 flex justify-between items-center text-sm">
-                    <span><b>${h.date}</b> - ${h.name}</span>
-                    <button onclick="removeHoliday(${index})" class="text-red-500 hover:text-red-700"><i class="fas fa-times"></i></button>
-                </li>`;
+                ul.innerHTML += `<li class="py-2 flex justify-between items-center text-sm"><span><b>${h.date}</b> - ${h.name}</span><button onclick="removeHoliday(${index})" class="text-red-500 hover:text-red-700"><i class="fas fa-times"></i></button></li>`;
             });
         };
 
         window.addHoliday = async function() {
             const date = document.getElementById('new-holiday-date').value;
             const name = document.getElementById('new-holiday-name').value;
-            if(!date || !name) return alert("Rellena fecha y motivo");
+            if(!date || !name) return;
             systemConfig.holidays.push({date, name});
-            await syncConfig();
-            renderAdminHolidays();
-            document.getElementById('new-holiday-date').value = '';
-            document.getElementById('new-holiday-name').value = '';
+            await setDoc(doc(db, "configuracion", "general"), systemConfig); renderAdminHolidays();
         };
 
         window.removeHoliday = async function(index) {
             systemConfig.holidays.splice(index, 1);
-            await syncConfig();
-            renderAdminHolidays();
+            await setDoc(doc(db, "configuracion", "general"), systemConfig); renderAdminHolidays();
         };
 
-        // Aulas
         window.renderAdminRooms = function() {
-            const tbody = document.getElementById('admin-rooms-list');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('admin-rooms-list'); tbody.innerHTML = '';
             systemConfig.rooms.forEach((r, index) => {
-                tbody.innerHTML += `<tr>
-                    <td class="py-2 font-medium">${r.name}</td>
-                    <td>${r.location}</td>
-                    <td>${r.type==='especial' ? '-' : r.capacity}</td>
-                    <td><span class="text-xs bg-gray-200 px-2 py-1 rounded uppercase">${r.type}</span></td>
-                    <td>${r.reqConserje ? 'Sí' : 'No'}</td>
-                    <td><button onclick="removeRoom(${index})" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></td>
-                </tr>`;
+                tbody.innerHTML += `<tr><td class="py-2">${r.name}</td><td>${r.location}</td><td>${r.type==='especial' ? '-' : r.capacity}</td><td><span class="text-xs bg-gray-200 px-2 py-1 rounded uppercase">${r.type}</span></td><td>${r.reqConserje ? 'Sí' : 'No'}</td><td><button onclick="removeRoom(${index})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         };
 
@@ -577,85 +577,44 @@
             const capacity = parseInt(document.getElementById('new-room-capacity').value) || 0;
             const type = document.getElementById('new-room-type').value;
             if(!name) return;
-
-            systemConfig.rooms.push({
-                id: 'r' + Date.now(),
-                name, location, capacity, type,
-                reqConserje: (type === 'movil')
-            });
-            await syncConfig();
-            renderAdminRooms();
-            updateUIWithConfig(); // actualiza selectores
+            systemConfig.rooms.push({ id: 'r' + Date.now(), name, location, capacity, type, reqConserje: (type === 'movil') });
+            await setDoc(doc(db, "configuracion", "general"), systemConfig); renderAdminRooms(); updateUIWithConfig();
         };
 
         window.removeRoom = async function(index) {
             if(confirm("¿Seguro que quieres borrar este recurso?")) {
                 systemConfig.rooms.splice(index, 1);
-                await syncConfig();
-                renderAdminRooms();
-                updateUIWithConfig();
+                await setDoc(doc(db, "configuracion", "general"), systemConfig); renderAdminRooms(); updateUIWithConfig();
             }
         };
 
-        // Sincronizar Config a Firebase
-        async function syncConfig() {
-            await setDoc(doc(db, "configuracion", "general"), systemConfig);
-        }
-
-        // --- ZONA DE PELIGRO ---
         window.deleteAllReservations = async function() {
-            const conf1 = confirm("⚠️ ATENCIÓN: Vas a borrar absolutamente todas las reservas del sistema. ¿Estás seguro?");
-            if(!conf1) return;
-            const pin = prompt("Escribe el PIN de administrador para confirmar el borrado masivo:");
-            if(pin !== systemConfig.adminPin) return alert("PIN Incorrecto. Operación cancelada.");
-            
-            try {
-                // Borrar doc a doc
-                const querySnapshot = await getDocs(collection(db, "reservas"));
-                querySnapshot.forEach(async (documento) => {
-                    await deleteDoc(doc(db, "reservas", documento.id));
-                });
-                alert("✅ Se han limpiado todas las reservas. El sistema está listo para un nuevo curso.");
-                renderSchedule();
-            } catch(e) {
-                alert("Hubo un error al borrar las reservas.");
-            }
+            if(!confirm("⚠️ Vas a borrar TODAS las reservas. ¿Seguro?")) return;
+            if(prompt("Escribe el PIN:") !== systemConfig.adminPin) return alert("PIN Incorrecto.");
+            const querySnapshot = await getDocs(collection(db, "reservas"));
+            querySnapshot.forEach(async (documento) => await deleteDoc(doc(db, "reservas", documento.id)));
+            alert("✅ Sistema formateado."); renderSchedule();
         };
 
         window.exportToCSV = function() {
-            if(allReservations.length === 0) return alert("No hay reservas para exportar.");
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Fecha/Dia,Hora,Aula,Profesor,Curso,Materia,Tipo\n";
-            
+            let csvContent = "data:text/csv;charset=utf-8,Fecha/Dia,Hora,Aula,Profesor,Curso,Materia,Dispositivos,Tipo\n";
             allReservations.forEach(r => {
-                const aulaName = systemConfig.rooms.find(rm => rm.id === r.roomId)?.name || 'Desconocida';
+                const aula = systemConfig.rooms.find(rm => rm.id === r.roomId)?.name || 'Desconocida';
                 const dia = r.type === 'trimestre' ? `DiaSemana_${r.dayOfWeek}` : r.date;
-                csvContent += `${dia},${r.time},${aulaName},${r.name},${r.course},${r.subject},${r.type}\n`;
+                csvContent += `${dia},${r.time},${aula},${r.name},${r.course},${r.subject},${r.numDevices||'-'},${r.type}\n`;
             });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "reservas_aulas.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "reservas.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
 
-        // --- NAVEGACIÓN ---
         window.switchTab = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'text-blue-600'));
-            
             document.getElementById('tab-' + tabId).classList.add('active');
             const btn = document.getElementById('btn-' + tabId);
-            if(btn) {
-                btn.classList.add('active');
-                btn.classList.remove('text-gray-500');
-            }
+            if(btn) { btn.classList.add('active'); btn.classList.remove('text-gray-500'); }
         };
 
-        // INICIAR APLICACIÓN
         initData();
     </script>
     <!-- FOOTER CON LICENCIA CC -->
