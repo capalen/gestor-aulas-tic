@@ -111,7 +111,6 @@
 
         <!-- PESTAÑA 3: ADMINISTRACIÓN -->
         <div id="tab-admin" class="tab-content">
-            <!-- (Se mantiene exactamente igual que en tu versión anterior) -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Configuración General -->
                 <div class="bg-white rounded-lg shadow p-6">
@@ -198,7 +197,7 @@
         </div>
     </main>
 
-    <!-- Modal Reserva Modificado -->
+    <!-- Modal Reserva -->
     <div id="reserve-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 class="text-xl font-bold mb-4" id="modal-title">Confirmar Reserva</h3>
@@ -211,7 +210,6 @@
                 <div><label class="block text-sm font-medium text-gray-700">Curso (Ej. 1º ESO A)</label><input type="text" id="res-course" class="w-full border rounded p-2 mt-1"></div>
                 <div><label class="block text-sm font-medium text-gray-700">Materia</label><input type="text" id="res-subject" class="w-full border rounded p-2 mt-1"></div>
                 
-                <!-- Oculto para aulas fijas, visible para carros móviles -->
                 <div id="div-devices" class="hidden">
                     <label class="block text-sm font-medium text-gray-700">¿Cuántos ordenadores/tabletas necesitas?</label>
                     <input type="number" id="res-devices" class="w-full border rounded p-2 mt-1" min="1">
@@ -225,7 +223,6 @@
                     </select>
                 </div>
 
-                <!-- Compromiso Cuaderno de Aula -->
                 <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
                     <label class="flex items-start gap-2 cursor-pointer">
                         <input type="checkbox" id="res-cuaderno" class="mt-1 w-5 h-5 text-red-600 rounded">
@@ -257,7 +254,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, setDoc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Aquí van tus llaves
         const firebaseConfig = {
             apiKey: "AIzaSyBs69L8fBroxFwcJ3sMFGcDHwIuXmSkVMg",
             authDomain: "gestoraulas-5192c.firebaseapp.com",
@@ -327,7 +323,6 @@
             renderAdminRooms();
         }
 
-        // --- LÓGICA DE BÚSQUEDA MODIFICADA ---
         window.searchRooms = function() {
             const dateVal = document.getElementById('search-date').value;
             const time = document.getElementById('search-time').value;
@@ -342,25 +337,22 @@
             const resultsDiv = document.getElementById('search-results');
             resultsDiv.innerHTML = '';
 
-            // CALCULAR USO ACUMULADO POR AULA/CARRO
             const usage = {};
             allReservations.forEach(res => {
                 if(res.time == time && ((res.type === 'trimestre' && res.dayOfWeek == dayOfWeek) || (res.type === 'puntual' && res.date === dateVal))) {
-                    // Si es reserva antigua (sin numDevices), asumimos que ocupa todo. Si no, suma los dispositivos.
                     const roomCap = systemConfig.rooms.find(r => r.id === res.roomId)?.capacity || 100;
                     const devicesUsed = res.numDevices ? res.numDevices : roomCap;
                     usage[res.roomId] = (usage[res.roomId] || 0) + devicesUsed;
                 }
             });
 
-            // FILTRAR AULAS
             const availableRooms = systemConfig.rooms.map(r => ({...r})).filter(r => {
                 const used = usage[r.id] || 0;
                 if(r.type === 'movil') {
                     r.currentAvailable = r.capacity - used;
-                    return r.currentAvailable >= 1; // Muestra si queda al menos 1 dispositivo
+                    return r.currentAvailable >= 1; 
                 } else {
-                    return used === 0; // Aulas fijas son todo o nada
+                    return used === 0; 
                 }
             });
 
@@ -375,7 +367,6 @@
                 let capacityText = room.type === 'especial' ? 'Aula Especial' : `${room.capacity} equipos`;
                 let warningHTML = '';
                 
-                // Lógica visual específica para Carros Móviles
                 if (room.type === 'movil') {
                     capacityText = `Quedan ${room.currentAvailable} disp. libres (de ${room.capacity})`;
                     if (room.currentAvailable < students) {
@@ -408,10 +399,8 @@
             document.getElementById('modal-title').textContent = `Reservar ${room.name} (Hora ${time})`;
             document.getElementById('modal-warning').style.display = room.reqConserje ? 'block' : 'none';
             
-            // Resetea el checkbox
             document.getElementById('res-cuaderno').checked = false;
 
-            // Configura selector de dispositivos si es carro móvil
             const divDevices = document.getElementById('div-devices');
             const inputDevices = document.getElementById('res-devices');
             if (roomType === 'movil') {
@@ -433,7 +422,6 @@
         window.confirmReservation = async function() {
             if(!pendingReservation) return;
 
-            // Validación Cuaderno de Aula
             if(!document.getElementById('res-cuaderno').checked) {
                 return alert("⚠️ Es obligatorio marcar la casilla aceptando rellenar el cuaderno de aula.");
             }
@@ -444,7 +432,6 @@
             const type = document.getElementById('res-type').value;
             if(!name || !course || !subject) return alert("Rellena todos los campos");
 
-            // Cálculo de dispositivos a guardar
             let numDevices = null;
             if(pendingReservation.roomType === 'movil') {
                 numDevices = parseInt(document.getElementById('res-devices').value);
@@ -452,7 +439,7 @@
                     return alert(`Por favor, indica un número válido de dispositivos (Máximo disponible: ${pendingReservation.availableCap}).`);
                 }
             } else {
-                numDevices = pendingReservation.availableCap; // Aulas fijas cogen el máximo de la sala
+                numDevices = pendingReservation.availableCap; 
             }
 
             const resData = {
@@ -478,7 +465,6 @@
             }
         };
 
-        // --- HORARIOS VISUALES MODIFICADOS (Permite múltiples reservas en la misma hora) ---
         window.renderSchedule = function() {
             const roomId = document.getElementById('schedule-room').value;
             const tbody = document.getElementById('schedule-body');
@@ -491,7 +477,6 @@
                 let tr = `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r bg-gray-50">${hour}ª Hora</td>`;
                 
                 days.forEach(day => {
-                    // Coge TODAS las reservas de esa hora y día (para carros compartidos)
                     const resList = roomRes.filter(r => r.time == hour && (r.type === 'trimestre' ? r.dayOfWeek == day : new Date(r.date).getDay() == day));
                     
                     if(resList.length > 0) {
@@ -527,7 +512,6 @@
             } else if (pin !== null) alert("PIN incorrecto o cancelado.");
         };
 
-        // --- ADMINISTRACIÓN ---
         window.promptAdmin = function() {
             const pin = prompt("PIN de administración:");
             if(pin === systemConfig.adminPin) {
@@ -617,16 +601,5 @@
 
         initData();
     </script>
-    <!-- FOOTER CON LICENCIA CC -->
-    <footer class="mt-12 text-center text-sm text-gray-500 pb-8">
-        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" class="inline-block mb-2">
-            <img alt="Licencia de Creative Commons" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" />
-        </a>
-        <br />
-        Gestor de Aulas y Recursos TIC por <b>Carlos Pérez Sierra</b> está bajo una 
-        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" class="text-blue-600 hover:underline" target="_blank">
-            Licencia Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional
-        </a>.
-    </footer>
 </body>
 </html>
